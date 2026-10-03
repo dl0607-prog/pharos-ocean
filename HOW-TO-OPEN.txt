@@ -1,0 +1,46 @@
+﻿PHAROS · 出海智能体中台
+═══════════════════════════════════════════════
+
+【怎么打开】
+  双击 PHAROS_v1.0.html 就行。
+  不用安装、不用联网、不用注册 —— 全部内容都在这一个文件里（约 720 KB）。
+  推荐用 Chrome / Edge / Safari 最新版打开。
+
+【打开后会看到什么】
+  1) 官网首页：这个平台是什么、给谁用、怎么运作。
+  2) 点「Open the workspace」进入工作台，里面有：
+     · 9 个专业智能体：出海体检 / 文化洞察 / 洞察 / 文案 / 素材 / 合规 / 上架 / 增长
+     · 6 个运营模块：店铺渠道 / 成本利润 / 库存补货 / 合规台账 / 财务对账 / 任务审批
+     · 工作接入：飞书、钉钉、企业微信、邮箱、Amazon / TikTok Shop / Temu 后台、
+       Payoneer、货代、检测机构等 18 个平台，把这些渠道来的工作汇总成一个收件箱，
+       可以直接选人指派、一键转成任务，落到甘特图和看板上
+  3) 顶栏右上角 🌐 可切换中文 / English。
+
+【想接入大模型】
+  顶栏 ⚙ → 选厂商 → 填你自己的 API Key。
+  支持 22 家（OpenAI / Claude / Gemini / DeepSeek / Kimi / 通义 / 智谱 / OpenRouter …）。
+  不填也完全能用：默认跑内置模拟引擎，所有流程和界面都能走完。
+
+【关于这份文件】
+  · 这是分享版，不含任何 API Key，可以放心转发。
+  · 里面的数据都是演示数据，不是真实经营数据。
+  · 可以在工作台里自己建公司工作区和项目试（点侧栏「项目」旁的 + 或首页的 + New project）。
+
+───────────────────────────────────────────────
+PHAROS — AI agent workspace for cross-border sellers
+
+HOW TO OPEN: double-click PHAROS_v1.0.html. No install, no internet, no login.
+Everything is inside this one ~720 KB file. Chrome / Edge / Safari recommended.
+
+WHAT IS INSIDE: the landing page explains the product; click "Open the workspace"
+for 9 specialist agents, 6 operations modules, and a work hub that aggregates tasks
+from 18 connected platforms (Feishu, DingTalk, WeCom, email, Amazon, TikTok Shop,
+Temu, Payoneer, freight forwarders, test labs …) into a single inbox you can assign
+to a person and turn into a tracked task.
+
+MODEL ACCESS: top bar ⚙ → pick a provider → paste your own API key. 22 providers,
+4 protocols. With no key it runs on a built-in simulation engine, so every screen
+still works.
+
+THIS COPY CONTAINS NO API KEYS and all data is fictional sample data.
+Use the 🌐 button in the top bar to switch language.
