@@ -2413,8 +2413,8 @@ body.has-sea {
   --sans: "Manrope", -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
   --ink: #FFF8EC;
   --ink-2: rgba(255, 248, 236, .80);
-  --ink-3: rgba(255, 248, 236, .62);
-  --ink-4: rgba(255, 248, 236, .44);
+  --ink-3: rgba(255, 248, 236, .74);
+  --ink-4: rgba(255, 248, 236, .58);
   --hair: rgba(255, 248, 236, .13);
   --hair-2: rgba(255, 248, 236, .24);
   --glass-line: rgba(255, 248, 236, .17);
@@ -2740,35 +2740,38 @@ body.has-sea.ph-day .notify-i,
 body.has-sea.ph-day .bubble,
 body.has-sea.ph-day .work,
 body.has-sea.ph-day .tbl th {
-  background: linear-gradient(155deg, rgba(32, 78, 100, .40), rgba(8, 32, 52, .58)) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(150%) brightness(1.02) !important;
-  backdrop-filter: blur(14px) saturate(150%) brightness(1.02) !important;
-  border-color: rgba(255, 240, 214, .30) !important;
-  box-shadow: 0 20px 50px -28px rgba(6, 20, 34, .55), inset 0 1px 0 rgba(255, 240, 214, .32) !important;
+  background: linear-gradient(160deg, rgba(13, 38, 58, .82), rgba(4, 18, 32, .92)) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(150%) brightness(.70) !important;
+  backdrop-filter: blur(14px) saturate(150%) brightness(.70) !important;
+  border-color: rgba(255, 240, 214, .22) !important;
+  box-shadow: 0 20px 50px -28px rgba(4, 12, 22, .65), inset 0 1px 0 rgba(255, 240, 214, .22) !important;
+  color: #FFF8EC !important;
 }
 body.has-sea.ph-day .kcol, body.has-sea.ph-day .work, body.has-sea.ph-day .copyblock,
 body.has-sea.ph-day .gantt, body.has-sea.ph-day .gantt-foot, body.has-sea.ph-day .gantt-axis-row {
-  background: linear-gradient(155deg, rgba(24, 62, 82, .44), rgba(6, 26, 44, .62)) !important;
+  background: linear-gradient(160deg, rgba(9, 28, 44, .88), rgba(4, 14, 26, .94)) !important;
 }
 body.has-sea.ph-day .topbar, body.has-sea.ph-day .sidebar, body.has-sea.ph-day .rail {
-  background: linear-gradient(180deg, rgba(20, 58, 78, .46), rgba(8, 30, 48, .60)) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(150%) brightness(1.0) !important;
-  backdrop-filter: blur(18px) saturate(150%) brightness(1.0) !important;
-  border-color: rgba(255, 240, 214, .22) !important;
+  background: linear-gradient(180deg, rgba(10, 30, 48, .84), rgba(4, 16, 30, .92)) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%) brightness(.72) !important;
+  backdrop-filter: blur(18px) saturate(150%) brightness(.72) !important;
+  border-color: rgba(255, 240, 214, .18) !important;
+  color: #FFF8EC !important;
 }
+body.has-sea.ph-day .main-inner, body.has-sea.ph-day .rail { color: #FFF8EC; }
 body.has-sea.ph-day .tag {
-  background: rgba(255, 248, 236, .10) !important;
-  border-color: rgba(255, 248, 236, .20) !important;
-  color: rgba(255, 248, 236, .92) !important;
+  background: rgba(255, 248, 236, .14) !important;
+  border-color: rgba(255, 248, 236, .30) !important;
+  color: #FFF8EC !important;
 }
 body.has-sea.ph-day .btn:not(.primary):not(.beacon) {
-  background: rgba(255, 248, 236, .10) !important;
-  border-color: rgba(255, 248, 236, .24) !important; color: #FFF8EC !important;
+  background: rgba(6, 24, 42, .55) !important;
+  border-color: rgba(255, 248, 236, .30) !important; color: #FFF8EC !important;
 }
-body.has-sea.ph-day .btn:not(.primary):not(.beacon):hover { background: rgba(255, 248, 236, .18) !important; }
-body.has-sea.ph-day .tbl td { border-bottom-color: rgba(255, 248, 236, .10) !important; }
-body.has-sea.ph-day .tbl tbody tr:hover, body.has-sea.ph-day .gantt-row:hover { background: rgba(255, 248, 236, .07) !important; }
-body.has-sea.ph-day .modal-mask { background: rgba(4, 18, 32, .45); }
+body.has-sea.ph-day .btn:not(.primary):not(.beacon):hover { background: rgba(10, 34, 56, .75) !important; }
+body.has-sea.ph-day .tbl td { border-bottom-color: rgba(255, 248, 236, .12) !important; }
+body.has-sea.ph-day .tbl tbody tr:hover, body.has-sea.ph-day .gantt-row:hover { background: rgba(255, 248, 236, .10) !important; }
+body.has-sea.ph-day .modal-mask { background: rgba(4, 18, 32, .55); }
 /* Day HUD: cream type needs a dark halo to hold on bright water */
 body.has-sea.ph-day .ph-hud { text-shadow: 0 1px 3px rgba(4, 20, 36, .85), 0 0 14px rgba(4, 20, 36, .45); }
 
@@ -2843,6 +2846,54 @@ body.has-sea .rail,
 body.has-sea .main-inner *,
 body.has-sea .sidebar *,
 body.has-sea .rail * { text-shadow: none !important; }
+
+/* ── Legibility: small letterspaced type was hard to read over the sea ──
+   Bigger sizes, tighter tracking, brighter ink and scrims under every
+   strip of chrome that floats directly on the water. */
+.ph-hud {
+  font-size: 13px; letter-spacing: .14em; color: var(--ink-2);
+  background: linear-gradient(180deg, transparent, rgba(4, 18, 32, .46));
+}
+.ph-hud .ph-status, .ph-hud .ph-hint {
+  text-shadow: 0 1px 3px rgba(4, 18, 32, .9), 0 0 12px rgba(4, 18, 32, .55);
+}
+.ph-chip {
+  font-size: 12px; letter-spacing: .12em;
+  color: rgba(255, 248, 236, .96);
+  background: rgba(4, 20, 36, .55);
+  border-color: rgba(255, 248, 236, .36);
+  text-shadow: 0 1px 8px rgba(4, 20, 36, .7);
+}
+.ph-rail .ph-rail-label { font-size: 10.5px; color: var(--ink-3); }
+.ph-rail .ph-tick { font-size: 10.5px; color: var(--ink-3); }
+.ph-rail .ph-depth-now { font-size: 13px; }
+.ph-under-copy p { font-size: 1rem; color: rgba(214, 238, 252, .9); }
+.ph-under-copy .ph-chip b { font-size: 13.5px; }
+.ph-under-copy .ph-cta .btn.primary.lg { font-size: 14px; }
+/* Workspace chrome: one step larger and one step brighter */
+body.has-sea .topbar { font-size: 13px; }
+body.has-sea .topbar .btn.sm { font-size: 12.5px; }
+body.has-sea .ws-name { font-size: 13px; }
+body.has-sea .ws-plan { font-size: 11.5px; color: var(--ink-3); }
+body.has-sea .topbar-search { font-size: 13px; color: var(--ink-2); }
+body.has-sea .nav-i { font-size: 14px; }
+body.has-sea .nav-sec { font-size: 11px; color: var(--ink-3); }
+body.has-sea .kpi-k { font-size: 12.5px; color: var(--ink-2); }
+body.has-sea .kpi-d { font-size: 12.5px; }
+body.has-sea .card-h .sub { font-size: 12.5px; color: var(--ink-3); }
+body.has-sea .tbl th { font-size: 11.5px; color: var(--ink-2); }
+body.has-sea .tbl td { font-size: 13.5px; }
+body.has-sea .tag { font-size: 12px; }
+body.has-sea .chip { font-size: 13px; }
+body.has-sea .muted-3 { color: var(--ink-3); }
+/* Day: type sits on bright water — darker scrims, brighter text */
+body.has-sea.ph-day #phShade { opacity: .55; }
+body.has-sea.ph-day .portal-nav .btn.ghost.sm {
+  background: rgba(6, 24, 42, .58) !important;
+  border-color: rgba(255, 248, 236, .42) !important;
+  color: #FFF8EC !important;
+}
+body.has-sea.ph-day .portal-chip { background: rgba(4, 20, 36, .52); }
 .portal-eyebrow {
   display: flex; align-items: center; gap: 9px; margin: 0 0 22px;
   font-size: 11px; font-weight: 700; letter-spacing: .3em; color: var(--ink);
@@ -2886,6 +2937,22 @@ body.has-sea .rail * { text-shadow: none !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .portal-eyebrow .ph-sq { animation: none; }
+}
+
+/* ── Portal legibility (after the portal definitions) ── */
+.portal-chip {
+  font-size: 12.5px; letter-spacing: .10em;
+  color: #FFF8EC;
+  background: rgba(4, 20, 36, .58);
+  border-color: rgba(255, 248, 236, .38);
+  text-shadow: 0 1px 8px rgba(4, 20, 36, .8);
+}
+.portal-eyebrow { font-size: 13px; letter-spacing: .20em; }
+body.has-sea.ph-day .portal-chip { background: rgba(4, 20, 36, .62); }
+body.has-sea.ph-day .portal-nav .btn.ghost.sm {
+  background: rgba(6, 24, 42, .62) !important;
+  border-color: rgba(255, 248, 236, .45) !important;
+  color: #FFF8EC !important;
 }
 
 </style>
