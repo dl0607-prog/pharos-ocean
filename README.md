@@ -1,30 +1,105 @@
-# PHAROS · 出海智能体中台 (Ocean Build)
+# PHAROS · 出海智能体中台
 
-**PHAROS — the AI agent workspace for cross-border sellers.** One shared workspace for the whole company: 9 specialist agents, 6 operations modules, and a work hub that aggregates tasks from 18 connected platforms into a single inbox.
+**让一个出海目标，变成团队可以执行、审核和追踪的工作流。**
 
-Single self-contained HTML file — no install, no server, no login. Double-click `index.html` to open.
+PHAROS 面向跨境电商卖家和品牌出海团队，把市场判断、消费者洞察、商品文案、创意素材、合规检查、发布准备与经营复盘放进同一个工作区。团队围绕同一项目查看任务、产出和决策，AI 提出方案，关键选择由人确认。
 
-## The Ocean build
+例如，一家宠物用品公司计划把饮水机卖到美国：运营需要选择渠道，内容团队需要确定卖点，负责人需要审核预算与合规，财务还要判断利润。PHAROS 用连续的任务链组织这些工作，帮助团队看清当前阶段、卡在哪里、下一步由谁决定。
 
-- **Scroll is the dive**: the page opens on a golden-hour sea; scrolling sinks you through the waterline — caustics, god rays, sea snow — and reaching the bottom hands you to the workspace, 48 metres down.
-- **Agents first**: the entrance lands straight in the Agent Session — nine specialist agents in relay, pausing at every decision gate for a human call.
-- **Living backdrop**: one full-screen WebGL shader renders the whole water column; the workspace floats on it and follows your scrolling.
-- **Bilingual**: EN / 中文 everywhere, switched live from the header.
-- **Bring your own model**: ⚙ in the top bar → pick a provider → paste your API key (22 providers, DeepSeek pre-configured). Keys stay in your browser.
+> **当前仓库是可直接体验的产品交互原型。** 默认使用虚构业务数据和模拟流程；配置模型后，可向所选服务商发起真实文本生成请求。店铺连接、平台任务汇总、自动发布、素材制作、财务同步等界面展示的是产品方案与示例，不代表已经接通这些平台的生产服务。
 
-## Privacy
+## 适合谁使用
 
-Contains **no API keys**. All sample data is fictional. No telemetry, no network calls except the AI provider you configure yourself.
+- 跨境电商运营：围绕一个商品与目标市场组织出海分析、内容准备和上线计划。
+- 品牌负责人：集中查看待决策事项、阶段结果和项目进展。
+- 内容与设计团队：沿用选定的市场方向，查看文案、素材方案及产出文件。
+- 供应链、合规与财务人员：结合库存、认证、成本和回款信息评估执行条件。
+- 产品评审与合作伙伴：体验公司工作区、角色权限和智能体协作的完整交互。
 
-## Files / 文件清单
+## 从目标到复盘：8 个工作阶段
 
-| File / 文件 | What it is / 说明 |
-|---|---|
-| `index.html` | **Ocean build — the current version**. Single-mode dive: golden-hour sea → scroll → 48 m workspace. Agents first. |
-| `PHAROS_v1.0.html` | 原版 v1.0 分享版(约 1.1 MB):产品介绍页 + 完整工作台,双击即开。 |
-| `reference/ocean-reference.html` | The original "Ocean Scroll" design reference the theme was ported from. |
-| `HOW-TO-OPEN.txt` | v1.0 分享版的使用说明(中英双语)。 |
+PHAROS 由一个指挥智能体协调八个专业智能体。工作流默认呈现当前阶段与下一步入口，完整流程可展开查看，每个阶段也有独立的详情页面。
 
----
+| 阶段 | 要回答的问题 | 界面中的主要产出 |
+| --- | --- | --- |
+| 出海体检 | 商品适合从哪个市场、哪个渠道开始？ | 出海路线、认证需求、预算方向 |
+| 消费者画像 | 当地消费者在意什么？ | 用户画像、需求与购买动机 |
+| 市场洞察 | 竞品的差评和市场缺口在哪里？ | 竞争分析、差异化卖点候选 |
+| 文案生成 | 怎样把卖点表达给不同市场？ | 多平台、多语言文案方案 |
+| 创意素材 | 用什么图片和视频承接文案？ | 主图与短视频方案、素材示例 |
+| 合规审核 | 内容与资质有哪些风险？ | 风险扫描、整改建议与审核结果 |
+| 发布确认 | 团队是否批准这次上线？ | 发布预设、确认记录与执行演示 |
+| 增长复盘 | 哪些商品、渠道和活动需要调整？ | 经营分析、活动建议与下一轮行动 |
 
-PHAROS — AI agent workspace for cross-border sellers. Ocean-themed build; demo data only.
+流程设置七个关键决策关口。模拟任务到达关口后暂停，等待用户选择或提交审批。真实模型输出会单独标注；模型不可用时，回退结果也会标明来源，便于评审时区分。
+
+## 一个工作区，五类入口
+
+### 工作台
+
+进入后先看当前任务与待处理事项。项目指标、完整进度、最近产出和风险信息放在可展开的详情里，减少重复展示。需要处理决策时，首页提供入口，顶栏也保留待决策提示。
+
+### AI 工作流
+
+通过对话提出目标，查看任务链、智能体工作记录、模型输出和阶段产出。八个专业阶段留在工作流内部，左侧导航不再随着任务启动增加八个入口。
+
+### 项目
+
+一个项目对应一个商品与目标市场。项目页提供阶段看板、时间计划和团队协作信息；文件资产页集中查看产出、版本、负责人和审批标记。原型支持在本机创建公司与项目，并保存自定义信息。
+
+### 业务管理
+
+| 模块 | 产品用途 |
+| --- | --- |
+| 店铺与渠道 | 查看多平台店铺、经营状态和负责人 |
+| 成本与利润 | 调整成本参数，比较费用和利润空间 |
+| 库存 | 查看库存、补货与供应风险 |
+| 合规台账 | 查看认证、到期时间和合规事项 |
+| 财务 | 查看回款、费用、对账、退税与汇率风险示例 |
+
+任务与审批从工作台进入，呈现来自多个平台的任务示例、负责人和处理状态。当前数据用于说明统一工作入口的产品设计。
+
+### 团队
+
+成员与权限页展示不同角色的职责，知识库承接团队资料。公司切换、项目切换、身份切换和审批记录用于体验协作机制。当前身份切换属于演示能力，不是服务器认证或生产权限系统。
+
+## 决策和审批如何工作
+
+AI 负责分析与建议，用户负责关键选择。到达决策关口时，右侧团队与决策面板自动展开；平时默认收起，也可以从顶栏随时打开。窄屏同样可以查看和处理决策。
+
+有审批权限的角色可以确认方案；其他角色的选择进入审批流程。界面记录选择、审批人与团队动态。发布阶段保留人工确认行为，当前版本通过本地状态模拟执行，不会直接向电商平台发布商品。
+
+## 模型接入
+
+点击顶栏的模型设置，选择服务商并填写 API 地址、密钥和模型名称。当前配置包含多家云端服务商及本地模型选项，DeepSeek 为预置选项之一。
+
+真实请求从浏览器发送至所配置的服务地址，因此可用性取决于服务商权限、模型名称、网络和跨域支持。可以先使用连接测试，再启用模型。未配置时即可完整体验模拟工作流。
+
+模型配置（包括密钥）保存在本机浏览器的 localStorage；使用共享设备时应清理配置。原型没有服务端密钥托管、团队数据同步或持久化业务数据库。页面还引用外部字体资源；真实 AI 调用会将对应提示词发送到你选择的服务商。
+
+## 海洋品牌与办公体验
+
+海洋是 PHAROS 的品牌意象：从海面下潜进入工作区，灯塔代表方向，团队保留航行中的决策权。入口的 WebGL 海洋背景、滚动下潜和可控环境声音继续保留。
+
+工作区以任务为中心，导航按业务归类，辅助面板按需展开，完整流程渐进展示。界面支持英文与中文切换。
+
+## 本地体验
+
+1. 下载或克隆本仓库。
+2. 用现代浏览器打开 `index.html`，无需安装依赖、启动后端或登录。
+3. 从海洋入口进入工作区，查看工作台或进入 AI 工作流。
+4. 使用示例项目启动流程，体验阶段结果、决策暂停和审批。
+5. 如需真实文本生成，再配置自己的模型服务。
+
+自定义公司、项目与模型配置保存在当前浏览器；清除站点数据或更换浏览器会影响这些本机配置。业务状态和示例产出不等于完整的生产数据持久化。
+
+## 仓库文件
+
+| 文件 | 用途 |
+| --- | --- |
+| `index.html` | 当前海洋主题版本，包含入口、工作区、交互引擎与示例数据 |
+| `PHAROS_v1.0.html` | 历史 v1.0 分享版本 |
+| `reference/ocean-reference.html` | 海洋视觉参考 |
+| `HOW-TO-OPEN.txt` | 历史版本的中英文打开说明 |
+
+当前版本适合产品体验、需求讨论和协作流程验证。投入真实经营前，还需要建设服务器认证、平台授权连接、数据同步、可靠任务执行与审计存储等能力。

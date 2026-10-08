@@ -2955,6 +2955,33 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
   color: #FFF8EC !important;
 }
 
+
+/* Focused workspace: secondary information is an optional side panel. */
+.app .shell { grid-template-columns: var(--sidebar-w) minmax(0,1fr); position:relative; }
+.app .rail { position:absolute; right:0; top:0; bottom:0; width:min(380px,100%); z-index:30; display:flex; background:var(--surface-solid); box-shadow:var(--shadow-lg); }
+.app .rail[hidden] { display:none !important; }
+.nav-group { margin:4px 0; }
+.nav-group > summary { padding:10px 11px; cursor:pointer; font-weight:600; }
+.nav-group .nav-i { margin-left:10px; }
+.nav-i { width:100%; border:0; text-align:left; font:inherit; background:transparent; cursor:pointer; }
+.flow summary { cursor:pointer; }
+.flow-current { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; }
+.flow-current .small { margin-top:4px; }
+.app .main { background:rgba(8,24,39,.48); }
+.app .topbar .ws-switch { flex-shrink:0; }
+.app .topbar .ws-name { white-space:nowrap; }
+html[lang="zh-CN"] .app { font-family:"Manrope","Source Han Sans SC","Noto Sans CJK SC","PingFang SC","Microsoft YaHei",sans-serif; letter-spacing:0; }
+html[lang="zh-CN"] .app .page-sub, html[lang="zh-CN"] .app .card-b { line-height:1.65; }
+.app .main-inner { max-width:1200px; margin:0 auto; }
+.app .main-inner .card { box-shadow:var(--shadow-xs); }
+@media (max-width:960px) {
+ .app .shell { grid-template-columns:minmax(0,1fr); }
+ .app .sidebar { display:block; max-height:180px; border-bottom:1px solid var(--line); }
+ .app .topbar { height:auto; min-height:var(--topbar-h); flex-wrap:wrap; padding:8px; }
+ .app .topbar .presence, .app .topbar .ws-plan { display:none; }
+ .flow-current { flex-wrap:wrap; }
+}
+
 </style>
 </head>
 <!-- Brand artwork is inlined at build time; exposed as CSS variables for the visuals -->
@@ -3010,6 +3037,7 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
 
     <div class="spacer"></div>
 
+    <button class="btn ghost sm" id="railToggle" data-act="toggle-rail" aria-controls="rail" aria-expanded="false">Team & decisions</button>
     <div class="presence" id="presence" title="Online members"></div>
     <button class="btn ghost sm" data-act="open-settings" title="Model access">⚙ <span id="llmBadge">AI</span></button>
     <button class="btn ghost sm" data-act="open-notify" title="Notifications">🔔<span id="notifDot"></span></button>
@@ -3030,7 +3058,7 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
   <div class="shell">
     <aside class="sidebar" id="sidebar"></aside>
     <main class="main" id="main"><div class="main-inner" id="mainInner"></div></main>
-    <aside class="rail" id="rail"></aside>
+    <aside class="rail" id="rail" hidden aria-label="Team and decisions"></aside>
   </div>
 </div>
 
@@ -5150,6 +5178,17 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
     "high": "高",
     "High": "高",
     "Hold": "暂缓",
+    "AI workflow": "AI 工作流",
+    "Business management": "业务管理",
+    "Team": "团队",
+    "Team & decisions": "团队与决策",
+    "Decision pending": "有待处理决策",
+    "Close panel": "收起面板",
+    "Full workflow": "完整流程",
+    "View current step": "查看当前阶段",
+    "Workflow complete": "流程已完成",
+    "Project details": "项目详情",
+    "Create a project to start the workflow": "创建项目以启动出海流程",
     "Home": "工作台",
     "hook": "钩子",
     "info": "信息",
@@ -8494,6 +8533,7 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
   var S = {
     area: 'site',          // 'site' = public site | 'app' = workspace
     view: 'overview',
+    railOpen: false,
     copyPlatform: 'amazon',
     lang: 'en-US',
     cultureTab: 'us',
@@ -8560,19 +8600,20 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
   function flowBar() {
     var cur = flowCurrentIndex();
     var done = FLOW.filter(flowDone).length;
-    return '<div class="flow">' +
-      '<div class="flow-top">' +
-      '<span class="flow-title">🧭 Guided workflow <span class="muted-3" style="font-weight:400">· 8 steps, always visible</span></span>' +
-      '<span class="flow-prog"><span class="bar"><i style="width:' + (done / FLOW.length * 100).toFixed(0) + '%"></i></span>' +
-      '<span class="tiny muted-3">' + done + ' / ' + FLOW.length + ' done</span></span>' +
-      '</div>' +
+    var step = FLOW[cur];
+    var gate = E.pendingGate();
+    var action = gate ? '<button class="btn beacon sm" data-act="open-rail">Go to decision</button>'
+      : '<button class="btn sm" data-act="goto" data-view="' + (step ? step.view : 'growth') + '">View current step</button>';
+    return '<div class="flow"><div class="flow-current"><div><b>' +
+      h(step ? step.t : 'Workflow complete') + '</b><div class="small muted">' +
+      (step ? 'Step ' + step.n + ' / ' + FLOW.length + ' · ' + h(step.d) : done + ' / ' + FLOW.length + ' done') +
+      '</div></div>' + action + '</div><details><summary class="small muted">Full workflow · ' + done + ' / ' + FLOW.length + ' done</summary>' +
       '<div class="flow-steps">' + FLOW.map(function (st, i) {
         var cls = flowDone(st) ? 'done' : (i === cur ? 'now' : '');
-        return '<div class="fstep ' + cls + '" data-act="goto" data-view="' + st.view + '">' +
+        return '<button type="button" class="fstep ' + cls + '" data-act="goto" data-view="' + st.view + '">' +
           '<span class="fn"><span class="fno">' + (flowDone(st) ? '✓' : st.n) + '</span>Step ' + st.n + '</span>' +
-          '<span class="ft">' + h(st.t) + '</span>' +
-          '<span class="fd">' + h(st.d) + '</span></div>';
-      }).join('') + '</div></div>';
+          '<span class="ft">' + h(st.t) + '</span><span class="fd">' + h(st.d) + '</span></button>';
+      }).join('') + '</div></details></div>';
   }
 
   /** Per-step hint: what this step does and what to click next */
@@ -8642,61 +8683,36 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
   /* ══════════ Sidebar ══════════ */
   function renderSidebar() {
     var pend = E.pendingApprovals().length;
-    var html = '';
-    NAV.forEach(function (n) {
-      if (n.sec) { html += '<div class="nav-sec">' + h(n.sec) + '</div>'; return; }
-      var badge = '';
-      if (n.id === 'overview' && pend) badge = '<span class="badge">' + pend + '</span>';
-      if (n.id === 'tasks') {
-        var openTasks = (D.tasks || []).filter(function (t) {
-          return t.ws === E.state.ws && t.status !== 'done';
-        }).length;
-        if (openTasks) badge = '<span class="badge soft">' + openTasks + '</span>';
-      }
-      if (n.id === 'compliance') {
-        var expiring = (D.complianceRegister || []).filter(function (c) {
-          return c.left != null && c.left <= 180;
-        }).length;
-        if (expiring) badge = '<span class="badge">' + expiring + '</span>';
-      }
-      html += '<div class="nav-i ' + (S.view === n.id ? 'on' : '') + '" data-act="goto" data-view="' + n.id + '">' +
-        '<span class="t">' + h(n.t) + '</span>' + badge + '</div>';
-    });
-
-    html += '<div class="nav-sec nav-sec-row"><span>Projects</span>' +
-      '<span class="nav-add" data-act="new-project" title="New project">＋</span></div>';
-    var myProjects = E.projectsOf();
-    if (!myProjects.length) {
-      html += '<div class="tiny muted-3" style="padding:4px 11px 8px;line-height:1.5">No projects yet in this company.</div>';
-    }
-    myProjects.forEach(function (p) {
-      html += '<div class="proj-i ' + (E.state.project === p.id ? 'on' : '') + '" data-act="switch-project" data-id="' + p.id + '">' +
-        '<i class="pdot" style="background:' + (p.progress >= 60 ? 'var(--brand)' : 'var(--line-2)') + '"></i>' +
-        '<span class="pname">' + h(p.name) + '</span>' +
-        (p.gate ? '<span class="badge">' + p.gate + '</span>' : '<span class="tiny muted-3">' + p.progress + '%</span>') +
-        '</div>';
-    });
-
-    // Quick links to the stations of the current project
-    var cur = E.project();
-    if (cur && STATIONS.some(function (s) { return E.state.agents[s] !== 'wait'; })) {
-      html += '<div class="nav-sec">' + h(cur.name.split(' · ')[0]) + '</div>';
-      STATIONS.forEach(function (sid) {
-        var a = E.agents.filter(function (x) { return x.id === sid; })[0];
-        var st = E.state.agents[sid];
-        var lbl = { wait: 'Not started', run: 'Running', gate: 'Decision', done: 'Done' }[st];
-        var col = { run: 'var(--info)', gate: 'var(--beacon)', done: 'var(--ok)' }[st] || 'var(--ink-4)';
-        html += '<div class="nav-i sub ' + (S.view === sid ? 'on' : '') + '" data-act="goto" data-view="' + sid + '">' +
-          '<span class="t">' + h(a.short) + '</span>' +
-          '<span class="tiny" style="color:' + col + '">' + (st === 'gate' ? '·' : (st === 'done' ? '✓' : '')) + '</span></div>';
-      });
-    }
+    var openTasks = (D.tasks || []).filter(function (t) { return t.ws === E.state.ws && t.status !== 'done'; }).length;
+    var groups = [
+      { t: 'Home', ids: ['overview', 'tasks'] },
+      { t: 'AI workflow', ids: ['session'] },
+      { t: 'Projects', ids: ['project', 'artifacts'] },
+      { t: 'Business management', ids: ['stores', 'margin', 'inventory', 'compliance', 'finance'] },
+      { t: 'Team', ids: ['team', 'knowledge'] }
+    ];
+    var html = groups.map(function (g) {
+      var active = g.ids.indexOf(S.view) >= 0 || (g.ids[0] === 'session' && STATIONS.indexOf(S.view) >= 0);
+      var items = g.ids.map(function (id) {
+        var n = NAV.filter(function (n) { return n.id === id; })[0];
+        return '<button class="nav-i ' + (S.view === id ? 'on' : '') + '" data-act="goto" data-view="' + id + '"><span class="t">' + h(n.t) + '</span>' +
+          (id === 'tasks' && openTasks ? '<span class="badge">' + openTasks + '</span>' : '') + '</button>';
+      }).join('');
+      if (g.ids[0] === 'project') items += E.projectsOf().map(function (p) { return '<button class="nav-i sub ' + (E.state.project === p.id ? 'on' : '') + '" data-act="switch-project" data-id="' + h(p.id) + '"><span class="t">' + h(p.name) + '</span></button>'; }).join('') + '<button class="nav-i" data-act="new-project">＋ New project</button>';
+      if (g.ids[0] === 'session') return '<button class="nav-i ' + (active ? 'on' : '') + '" data-act="goto" data-view="session"><span class="t">' + h(g.t) + '</span></button>';
+      return '<details class="nav-group"' + (active ? ' open' : '') + '><summary>' + h(g.t) +
+        (g.ids[0] === 'overview' && pend ? ' · ' + pend : '') + '</summary>' + items + '</details>';
+    }).join('');
     doc.getElementById('sidebar').innerHTML = I18N.html(html);
   }
 
   /* ══════════ Right rail ══════════ */
   function renderRail() {
-    var html = '';
+    doc.getElementById('rail').hidden = !S.railOpen;
+    var toggle = doc.getElementById('railToggle');
+    toggle.setAttribute('aria-expanded', String(S.railOpen));
+    toggle.textContent = I18N.text(E.pendingGate() || E.pendingApprovals().length ? 'Decision pending' : 'Team & decisions');
+    var html = '<button class="btn sm" data-act="toggle-rail">Close panel</button>';
 
     // Agent team
     var agentRows = E.agents.map(function (a) {
@@ -9245,7 +9261,7 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
 
     E.on('thought', function () { if (S.view === 'session' || S.view === 'overview') renderMain(); });
     E.on('state', function () { renderTopbar(); renderSidebar(); renderRail(); });
-    E.on('gate', function () { renderAll(); });
+    E.on('gate', function () { S.railOpen = true; renderAll(); });
     E.on('gate-resolved', function () { renderAll(); });
     E.on('approval-request', function () { renderAll(); });
     E.on('activity', function () { renderRail(); });
@@ -9303,7 +9319,7 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
         e.preventDefault();
         UI.actions.send();
       }
-      if (e.key === 'Escape') { closeSettings(); doc.getElementById('idMask').hidden = true; doc.getElementById('wsMask').hidden = true; doc.getElementById('notifyMask').hidden = true; }
+      if (e.key === 'Escape') { S.railOpen = false; renderRail(); closeSettings(); doc.getElementById('idMask').hidden = true; doc.getElementById('wsMask').hidden = true; doc.getElementById('notifyMask').hidden = true; }
     });
 
     // Restore model config; with no history, use the pre-configured DeepSeek key and go live immediately
@@ -9365,6 +9381,8 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
   };
 
   /* ══════════ Language actions (UI must exist first) ══════════ */
+  UI.actions['toggle-rail'] = function () { S.railOpen = !S.railOpen; renderRail(); };
+  UI.actions['open-rail'] = function () { S.railOpen = true; renderRail(); };
   UI.actions['new-ws'] = function () { openNewWs(); };
   UI.actions['create-ws'] = function () { createWorkspace(); };
   UI.actions['new-project'] = function () { openNewProject(); };
@@ -9799,10 +9817,10 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
     var stTag = { wait: tag('Not started', ''), run: tag('Running', 'info'), gate: tag('Awaiting decision', 'beacon'), done: tag('Done', 'ok') }[st];
     var btn = st === 'wait'
       ? '<button class="btn primary" data-act="run" data-stage="' + id + '">' + h(runLabel || '▶ Start this step') + '</button>'
-      : (st === 'gate' ? '<span class="small muted-3">The flow is paused. Complete the decision on the right.</span>' : '');
+      : (st === 'gate' ? '<span class="small muted-3">The flow is paused. <button class="btn beacon sm" data-act="open-rail">Go to decision</button></span>' : '');
     var startBtn = st === 'wait'
       ? '<button class="btn primary" data-act="run" data-stage="' + id + '">▶ Start this step</button>'
-      : (st === 'gate' ? '<button class="btn beacon" data-act="goto" data-view="' + id + '">✋ Go to decision</button>' : '');
+      : (st === 'gate' ? '<button class="btn beacon" data-act="open-rail">✋ Go to decision</button>' : '');
     var hint = STEP_HINT[id] ? UI.nextHint(id, STEP_HINT[id], startBtn) : '';
     return pageHead(title, sub, stTag + btn, E.agents.filter(function (a) { return a.id === id; })[0].ico) +
       UI.flowBar() + hint;
@@ -9862,11 +9880,7 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
     var me = E.me();
     var proj = E.project();
     if (!proj) {
-      return head + card(null, null, startEmpty('project', '🧭', 'This company has no project yet',
-        'A project is one product going to one market. Create one and the agents have something to work on.',
-        ['A shared space for every artifact the agents produce',
-         'A task chain with owners and due dates',
-         'A Gantt timeline so the team can see the plan']));
+      return pageHead('Home', '', '<button class="btn primary" data-act="new-project">＋ New project</button>') + card('This company has no project yet', 'Create a project to start the workflow', '');
     }
     var pend = E.pendingApprovals();
     var gate = E.pendingGate();
@@ -9922,15 +9936,16 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
     }).join('');
 
     return head +
-      card(null, null, kpis, null, { cls: '' }) +
+      UI.flowBar() +
       card('Needs your action', gate || pend.length ? 'The flow will not move on its own' : 'No blockers', todo) +
+      '<details><summary class="small muted">Project details</summary>' + card(null, null, kpis) +
       card('Current project', 'Shared across the team · every member sees the same latest state', projBlock) +
       '<div class="grid g2">' +
         card('Recent artifacts', D.artifacts.length + ' deliverables', recentArt.slice(0, 3).map(artifactRow).join(''),
           '<button class="btn ghost sm" data-act="goto" data-view="artifacts">View all →</button>') +
         card('Watch list', 'From the risk radar', risks,
           '<button class="btn ghost sm" data-act="goto" data-view="health">Details →</button>') +
-      '</div>';
+      '</div></details>';
   };
 
   function roleTip() {
@@ -10021,7 +10036,7 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
       '<div class="chips">' + ['I want to sell a pet water fountain in the US', 'Check whether this product can be sold in Japan', 'Why did we lose money last quarter', 'Draft a plan for the Thanksgiving promotion']
         .map(function (x) { return '<span class="chip" data-act="chip" data-text="' + h(x) + '">' + h(x) + '</span>'; }).join('') + '</div></div>';
 
-    return head +
+    return head + UI.flowBar() +
       card(null, null, thread + '<div style="margin-top:18px">' + work + '</div>') +
       (outs ? card('AI output', 'Conclusions from the model, not hard-coded copy', outs, tag(E.llm.providerName + ' · ' + E.llm.model, E.state.mode === 'live' ? 'ok' : 'warn')) : '') +
       (gateHtml || '') +
@@ -11450,7 +11465,7 @@ body.has-sea.ph-day .portal-nav .btn.ghost.sm {
     UI.enterApp(el && el.getAttribute('data-view'));
   };
   UI.actions['exit-site'] = function () { UI.exitSite(); };
-  UI.actions.goto = function (el) { UI.setView(el.getAttribute('data-view')); };
+  UI.actions.goto = function (el) { var v = el.getAttribute('data-view'); UI.setView(v); var gate = E.pendingGate(); if (gate && gate.stage === v) UI.actions['open-rail'](); };
   UI.actions.runall = function () { UI.runAll(); };
   UI.actions.run = function (el) {
     var st = el.getAttribute('data-stage');
