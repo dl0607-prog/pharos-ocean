@@ -2658,6 +2658,15 @@ body.has-sea .seg > *:not(.on):hover { background: #23485F; color: #FFFFFF; }
 body.has-sea .seg > *.on { background: var(--grad) !important; color: #14203A !important; }
 body.has-sea .seg > *:focus-visible { outline: 2px solid #FFD9A0; outline-offset: 2px; }
 body.has-sea .task-tabs > span b { opacity: 1; }
+/* Task navigation glass: translucent ocean tint with a light-catching rim. */
+body.has-sea .seg.task-tabs {
+  background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.025) 48%, rgba(141,210,230,.10)), rgba(9,31,48,.68) !important;
+  border-color: rgba(235,249,255,.32) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(145%);
+  backdrop-filter: blur(14px) saturate(145%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 -1px 0 rgba(255,255,255,.06), 0 8px 24px rgba(2,12,24,.18);
+}
+body.has-sea .seg.task-tabs > *:not(.on):hover { background: rgba(235,249,255,.12); }
 body.has-sea .pipe-n.on { background: var(--grad) !important; color: #14203A !important; }
 body.has-sea .prov-item.on { background: var(--grad) !important; color: #14203A !important; }
 body.has-sea .prov-item.on .pi-dot.has { background: #14203A !important; }
