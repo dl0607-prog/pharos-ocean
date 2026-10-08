@@ -2784,6 +2784,65 @@ body.has-sea.ph-day .ph-hud { text-shadow: 0 1px 3px rgba(4, 20, 36, .85), 0 0 1
 }
 /* The scroll run below the hero: the whole dive from sunset to the deep */
 .portal-spacer { height: 340vh; position: relative; }
+
+/* ── Perf: retire the legacy 3D panel system ──
+   The earlier photo-backdrop theme gave every card its own perspective
+   transform, slab pseudo-element and layered shadows — each one a
+   composited layer repainted on every scroll frame over the live sea.
+   Flat panels with one cheap hover lift are far smoother, and the glass
+   blur already carries the depth. */
+body.has-sea .main-inner,
+body.has-sea .site-sec-in,
+body.has-sea .site-hero-in,
+body.has-sea .main-inner > .grid,
+body.has-sea .kanban { perspective: none !important; }
+body.has-sea .main-inner .card,
+body.has-sea .main-inner .kpi,
+body.has-sea .main-inner .grid > *,
+body.has-sea .rail-block,
+body.has-sea .artifact,
+body.has-sea .kcol,
+body.has-sea .kcard,
+body.has-sea .app-card,
+body.has-sea .plat-card,
+body.has-sea .site-feat,
+body.has-sea .site-cap,
+body.has-sea .td-row,
+body.has-sea .modal,
+body.has-sea .pv {
+  transform: none !important;
+  will-change: auto !important;
+  transition: transform .18s var(--ease), box-shadow .18s var(--ease), border-color .18s var(--ease) !important;
+}
+body.has-sea .main-inner .card:hover,
+body.has-sea .main-inner .kpi:hover,
+body.has-sea .rail-block:hover,
+body.has-sea .artifact:hover,
+body.has-sea .kcol:hover,
+body.has-sea .app-card:hover,
+body.has-sea .plat-card:hover,
+body.has-sea .site-feat:hover,
+body.has-sea .site-cap:hover,
+body.has-sea .td-row:hover { transform: translateY(-2px) !important; }
+/* No slab edges, no fake glass thickness — the pseudo layers cost a pass each */
+body.has-sea .site-feat::after,
+body.has-sea .site-cap::after,
+body.has-sea .main-inner .card::after,
+body.has-sea .app-card::after,
+body.has-sea .plat-card::after,
+body.has-sea .artifact::after,
+body.has-sea .main-inner .card::before,
+body.has-sea .site-feat::before,
+body.has-sea .site-cap::before,
+body.has-sea .artifact::before { content: none !important; display: none !important; }
+/* Full-page text shadows repaint every glyph on scroll — panels are opaque
+   enough to carry legibility on their own */
+body.has-sea .main-inner,
+body.has-sea .sidebar,
+body.has-sea .rail,
+body.has-sea .main-inner *,
+body.has-sea .sidebar *,
+body.has-sea .rail * { text-shadow: none !important; }
 .portal-eyebrow {
   display: flex; align-items: center; gap: 9px; margin: 0 0 22px;
   font-size: 11px; font-weight: 700; letter-spacing: .3em; color: var(--ink);
@@ -11593,7 +11652,7 @@ body.has-sea.ph-day .ph-hud { text-shadow: 0 1px 3px rgba(4, 20, 36, .85), 0 0 1
     "}",
     "float fbm(vec2 p){",
     "  float v = 0.0; float a = 0.5;",
-    "  for(int i = 0; i < 4; i++){ v += a * noise(p); p = p * 2.03 + vec2(17.3, 9.1); a *= 0.5; }",
+    "  for(int i = 0; i < 3; i++){ v += a * noise(p); p = p * 2.03 + vec2(17.3, 9.1); a *= 0.5; }",
     "  return v;",
     "}",
     "float caustic(vec2 uv, float t){",
