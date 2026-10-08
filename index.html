@@ -1735,7 +1735,6 @@ body.has-sea .copyblock,
 body.has-sea .notify-i,
 body.has-sea .work,
 body.has-sea .bubble,
-body.has-sea .seg,
 body.has-sea .tbl th {
   background: var(--panel) !important;
   border-color: var(--panel-line) !important;
@@ -2652,7 +2651,13 @@ body.has-sea .turn.me .bubble b { color: #0D2C42 !important; }
 body.has-sea .nav-i.on { background: rgba(242,178,107,.15) !important; }
 body.has-sea .nav-i.on .t { color: #FFD9A0 !important; }
 body.has-sea .nav-i.on::before { background: #F2B26B !important; }
+/* Segmented navigation needs a stable dark surface above the bright sea. */
+body.has-sea .seg { background: #102A3D !important; border-color: rgba(234,244,250,.24) !important; color: #EAF4FA; }
+body.has-sea .seg > * { color: #EAF4FA; }
+body.has-sea .seg > *:not(.on):hover { background: #23485F; color: #FFFFFF; }
 body.has-sea .seg > *.on { background: var(--grad) !important; color: #14203A !important; }
+body.has-sea .seg > *:focus-visible { outline: 2px solid #FFD9A0; outline-offset: 2px; }
+body.has-sea .task-tabs > span b { opacity: 1; }
 body.has-sea .pipe-n.on { background: var(--grad) !important; color: #14203A !important; }
 body.has-sea .prov-item.on { background: var(--grad) !important; color: #14203A !important; }
 body.has-sea .prov-item.on .pi-dot.has { background: #14203A !important; }
