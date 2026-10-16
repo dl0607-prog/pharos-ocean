@@ -39,6 +39,39 @@ body.has-sea .ws-switch .muted-3 { color: rgba(20, 32, 56, .5); }
 /* 左侧栏「出海工作台」入口 */
 #phx-side-nav .nav-i { margin: 1px 0; }
 
+/* ══ 白色玻璃框 → 浅灰色玻璃框（海面主题，统一替换）══ */
+body.has-sea {
+  --surface: rgba(232, 235, 241, .80);
+  --surface-2: rgba(232, 235, 241, .60);
+  --surface-3: rgba(232, 235, 241, .42);
+  --surface-solid: #e9edf3;
+  --material: rgba(232, 235, 241, .78);
+  --material-2: rgba(232, 235, 241, .88);
+}
+body.has-sea .rail-block,
+body.has-sea .site-feat,
+body.has-sea .site-cap,
+body.has-sea .artifact,
+body.has-sea .kcol,
+body.has-sea .app-card,
+body.has-sea .td-row,
+body.has-sea .ib-item,
+body.has-sea .plat-card,
+body.has-sea .modal {
+  background: rgba(232, 235, 241, .82);
+}
+body.has-sea .topbar,
+body.has-sea .sidebar,
+body.has-sea .rail {
+  background: rgba(232, 235, 241, .82);
+}
+body.has-sea .site-nav { background: rgba(232, 235, 241, .82); }
+body.has-sea .btn:not(.primary):not(.beacon) {
+  background: rgba(232, 235, 241, .85);
+  border-color: rgba(20, 32, 56, .16);
+  color: #14203A;
+}
+
 /* ══ 登录门槛 ═══════════════════════════════════════ */
 
 #phx-gate {
