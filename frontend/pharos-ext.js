@@ -40,6 +40,40 @@
     setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 4000);
   }
 
+  /* ── 弹窗容器(按需创建,不依赖页面结构) ── */
+  function closeModal() {
+    var mask = document.getElementById("mask");
+    if (mask) mask.classList.remove("show");
+    var wrap = document.getElementById("modal-wrap");
+    if (wrap) wrap.innerHTML = "";
+  }
+
+  function openModal(html, wide) {
+    closeModal();
+    var wrap = document.getElementById("modal-wrap");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.id = "modal-wrap";
+      document.body.appendChild(wrap);
+    }
+    var mask = document.getElementById("mask");
+    if (!mask) {
+      mask = document.createElement("div");
+      mask.id = "mask";
+      document.body.appendChild(mask);
+    }
+    var m = document.createElement("div");
+    m.className = "modal" + (wide ? " wide" : "");
+    m.innerHTML = html;
+    wrap.appendChild(m);
+    mask.classList.add("show");
+    requestAnimationFrame(function () { m.classList.add("show"); });
+    var closeBtn = $(".modal-close", m);
+    if (closeBtn) closeBtn.onclick = closeModal;
+    mask.onclick = closeModal;
+    return m;
+  }
+
   /* ── API（带登录态） ── */
   function api(path, opts) {
     var headers = { "Content-Type": "application/json" };
