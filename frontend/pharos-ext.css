@@ -68,7 +68,19 @@ body.has-sea .sidebar { border-right: 1px solid rgba(20, 32, 56, .12); }
 /* 团队成员行内的编辑/删除按钮 */
 [data-phx-edit] { margin-left: 2px; }
 
-/* ══ 白色玻璃框 → 浅灰色玻璃框（海面主题，统一替换）══ */
+/* ══ 白色玻璃框 → 浅灰色玻璃框（全局统一替换，不区分主题）══ */
+:root {
+  --surface: rgba(232, 235, 241, .82);
+  --surface-2: rgba(232, 235, 241, .62);
+  --surface-3: rgba(232, 235, 241, .45);
+  --surface-solid: #e9edf3;
+  --material: rgba(232, 235, 241, .80);
+  --material-2: rgba(232, 235, 241, .90);
+}
+.site-nav { background: rgba(232, 235, 241, .85); border-bottom-color: rgba(20, 32, 56, .10); }
+.site-sec.alt {
+  background: linear-gradient(180deg, transparent, rgba(232, 235, 241, .5) 12%, rgba(232, 235, 241, .5) 88%, transparent);
+}
 body.has-sea {
   --surface: rgba(232, 235, 241, .80);
   --surface-2: rgba(232, 235, 241, .60);
@@ -76,6 +88,7 @@ body.has-sea {
   --surface-solid: #e9edf3;
   --material: rgba(232, 235, 241, .78);
   --material-2: rgba(232, 235, 241, .88);
+  --glass-line: rgba(20, 32, 56, .12);
 }
 body.has-sea .rail-block,
 body.has-sea .site-feat,
@@ -120,11 +133,11 @@ body.has-sea .btn:not(.primary):not(.beacon) {
   width: min(400px, 100%);
   border-radius: 22px;
   padding: 26px 28px 22px;
-  background: rgba(255, 255, 255, .92);
+  background: rgba(234, 237, 242, .96);
   -webkit-backdrop-filter: blur(26px) saturate(150%);
   backdrop-filter: blur(26px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, .85);
-  box-shadow: 0 40px 100px -40px rgba(8, 22, 44, .65), inset 0 1px 0 rgba(255, 255, 255, .95);
+  border: 1px solid rgba(20, 32, 56, .12);
+  box-shadow: 0 40px 100px -40px rgba(8, 22, 44, .65), inset 0 1px 0 rgba(255, 255, 255, .8);
   color: #14203A;
   animation: modalIn .34s cubic-bezier(.32, .72, 0, 1) both;
 }
