@@ -55,9 +55,13 @@ body.has-sea .ws-switch .ws-plan { display: none; }            /* 工作区只�
 .phx-user #phx-user-name { display: none; }                    /* 名字已由原版账号区显示 */
 .phx-user .phx-out { padding: 2px 8px; }
 
-/* ══ 三栏布局均匀:左 236 / 右 296,中间更宽,互不挤压 ══════ */
+/* ══ 三栏布局均匀:左 236 / 右 296,中间内容缩窄居中,与右侧留出空隙 ══ */
 body.has-sea { --sidebar-w: 236px; --rail-w: 296px; }
-body.has-sea .main-inner { padding: 24px 36px 80px; max-width: 1160px; }
+body.has-sea .main-inner {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 32px 80px;
+}
 body.has-sea .rail { border-left: 1px solid rgba(20, 32, 56, .12); }
 body.has-sea .sidebar { border-right: 1px solid rgba(20, 32, 56, .12); }
 
