@@ -202,14 +202,12 @@
 
   /* ══════════════ 团队成员：查看视图里可直接编辑/删除 ══════════════ */
   function hookTeamEdit() {
-    var UI = window.LH_UI;
-    if (!UI || !UI.renderMain || UI.renderMain.__phx) return;
-    var orig = UI.renderMain;
-    UI.renderMain = function () {
-      orig.apply(UI, arguments);
-      decorateTeamView();
-    };
-    UI.renderMain.__phx = true;
+    var main = document.getElementById("mainInner");
+    if (!main || main.__phxObs) return;
+    main.__phxObs = true;
+    new MutationObserver(function () { decorateTeamView(); })
+      .observe(main, { childList: true, subtree: true });
+    decorateTeamView();
   }
 
   function decorateTeamView() {
@@ -465,31 +463,29 @@
   /* ══════════════ 4. 悬浮入口（出海启动 / 平台对接） ══════════════ */
 
   function mountSidebarNav() {
-    var UI = window.LH_UI;
-    if (!UI || !UI.renderSidebar || UI.renderSidebar.__phx) return;
-    var orig = UI.renderSidebar;
-    UI.renderSidebar = function () {
-      orig.apply(UI, arguments);
-      injectSidebarNav();
-    };
-    UI.renderSidebar.__phx = true;
     injectSidebarNav();
+    var sb = document.getElementById("sidebar");
+    if (sb && !sb.__phxObs) {
+      sb.__phxObs = true;
+      new MutationObserver(function () { injectSidebarNav(); })
+        .observe(sb, { childList: true });
+    }
   }
 
   /* 团队动态为空时给一句提示（不留空白块，也不造假数据） */
   function hookRailEmptyState() {
-    var UI = window.LH_UI;
-    if (!UI || !UI.renderRail || UI.renderRail.__phx) return;
-    var orig = UI.renderRail;
-    UI.renderRail = function () {
-      orig.apply(UI, arguments);
-      var feed = document.querySelector("#rail .feed");
+    var rail = document.getElementById("rail");
+    if (!rail || rail.__phxObs) return;
+    rail.__phxObs = true;
+    var apply = function () {
+      var feed = rail.querySelector(".feed");
       if (feed && !feed.children.length) {
         feed.innerHTML = '<div class="feed-i"><div class="fc" style="color:rgba(128,128,154,.9)">' +
           "暂无动态 —— 你与团队的每次决策、每个任务都会记录在这里。</div></div>";
       }
     };
-    UI.renderRail.__phx = true;
+    new MutationObserver(apply).observe(rail, { childList: true, subtree: true });
+    apply();
   }
 
   /* ══════════════ 首页「开始出海」大按钮 ══════════════
@@ -1025,6 +1021,7 @@
     hookTeamPersist();
     hookTeamEdit();
     hookOverviewCta();
+    hookRailEmptyState();
     if (token()) {
       api("/api/auth/me").then(function (r) {
         afterAuth(r.user);
