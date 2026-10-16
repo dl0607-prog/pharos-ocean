@@ -3,6 +3,23 @@
    仅为本扩展层自身的组件（登录门槛、悬浮入口、出海启动/平台对接面板）提供
    与原版设计语言一致的样式。 */
 
+/* ══ 右侧工作台（Team & decisions）留白优化 ═══════════════
+   不删任何内容、不动功能，只让右侧面板更透气、不那么挤。 */
+.rail {
+  gap: 20px;
+  padding: 18px 14px 24px;
+}
+.rail-block + .rail-block { margin-top: 2px; }
+.rail-head { padding: 12px 14px; }
+.rail-body { padding: 12px 14px; }
+.rail-body.flush { padding: 8px 10px; }
+.agent-row { padding: 9px 12px; margin-bottom: 1px; }
+.rail .btn[data-act="toggle-rail"] { margin-bottom: 2px; }
+.rail .gate-h { padding: 14px 16px 8px; }
+.rail .gate-why { padding: 0 16px 12px; }
+.rail .gate-opts { padding: 0 14px 14px; gap: 8px; }
+.rail .gate-f { padding: 10px 16px; }
+
 /* ══ 登录门槛 ═══════════════════════════════════════ */
 
 #phx-gate {
