@@ -55,8 +55,23 @@ body.has-sea .ws-switch .ws-plan { display: none; }            /* 工作区只�
 .phx-user #phx-user-name { display: none; }                    /* 名字已由原版账号区显示 */
 .phx-user .phx-out { padding: 2px 8px; }
 
-/* ══ 三栏布局均匀:左 220 / 右 280,中间内容缩窄居中,左右留出相等空隙 ══ */
+/* ══ 三栏布局:右侧面板回归三栏网格列(原版是悬浮覆盖层,会挡住中间内容)══ */
 body.has-sea { --sidebar-w: 220px; --rail-w: 280px; }
+.app .shell {
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--rail-w);
+}
+.app .rail {
+  position: relative;
+  right: auto;
+  top: auto;
+  bottom: auto;
+  width: var(--rail-w, 280px);
+  min-width: 0;
+  z-index: auto;
+  box-shadow: none;
+  display: flex;
+  flex: none;
+}
 .app .main-inner {
   max-width: 860px;
   margin: 0 auto;
