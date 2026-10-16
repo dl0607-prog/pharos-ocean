@@ -36,8 +36,19 @@ body.has-sea .ws-switch .ws-name,
 body.has-sea .ws-switch .ws-plan { color: #14203A; }
 body.has-sea .ws-switch .muted-3 { color: rgba(20, 32, 56, .5); }
 
-/* 左侧栏「出海工作台」入口 */
-#phx-side-nav .nav-i { margin: 1px 0; }
+/* ══ 顶栏拥挤优化：均匀间距、隐藏冗余项、让所有按钮可见 ══════ */
+body.has-sea .topbar, .topbar { gap: 8px; padding: 0 12px; }
+.topbar-search { min-width: 110px; max-width: 200px; }
+.topbar button[data-act="exit-site"] { display: none; }       /* Website ↗ 冗余 */
+#oceanSoundBtn .lang-emoji, #oceanSoundBtn { font-size: 12px; } /* 声音按钮只留图标 */
+#oceanSoundLabel { display: none; }                            /* 隐藏 SOUND 文字 */
+body.has-sea .ws-switch .ws-plan { display: none; }            /* 工作区只留名称 */
+.phx-user { padding: 3px 5px 3px 10px; }
+.phx-user #phx-user-name { display: none; }                    /* 名字已由原版账号区显示 */
+.phx-user .phx-out { padding: 2px 8px; }
+
+/* 左侧栏底部「出海工作台」入口：与上方分组隔开 */
+#phx-side-nav { margin-top: 12px; border-top: 1px solid rgba(20,32,56,.08); padding-top: 6px; }
 
 /* ══ 白色玻璃框 → 浅灰色玻璃框（海面主题，统一替换）══ */
 body.has-sea {

@@ -390,7 +390,7 @@
       '<button class="nav-i" id="phx-nav-launch"><span class="ic">🚀</span><span class="t">出海启动</span></button>' +
       '<button class="nav-i" id="phx-nav-platforms"><span class="ic">🔗</span><span class="t">平台对接</span></button>' +
       '<button class="nav-i" id="phx-nav-member"><span class="ic">👥</span><span class="t">添加成员</span></button>';
-    sb.insertBefore(block, sb.firstChild);
+    sb.appendChild(block);   // 放在左侧栏底部（左下角）
     document.getElementById("phx-nav-launch").addEventListener("click", function () { openPanel("launch"); });
     document.getElementById("phx-nav-platforms").addEventListener("click", function () { openPanel("platforms"); });
     document.getElementById("phx-nav-member").addEventListener("click", openMemberModal);
