@@ -406,6 +406,30 @@ def add_member(user_id: int, ws: str, name: str, role: str, title: str) -> dict:
         return _member_dict(m)
 
 
+def update_member(user_id: int, mid: str, name: str, role: str, title: str):
+    with session() as s:
+        m = s.query(Member).filter(Member.user_id == user_id, Member.id == mid).first()
+        if m is None:
+            return None
+        if name:
+            m.name = name
+        if role:
+            m.role = role
+        if title:
+            m.title = title
+        s.flush()
+        return _member_dict(m)
+
+
+def delete_member(user_id: int, mid: str) -> bool:
+    with session() as s:
+        m = s.query(Member).filter(Member.user_id == user_id, Member.id == mid).first()
+        if m is None:
+            return False
+        s.delete(m)
+        return True
+
+
 def replace_team(user_id: int, workspaces, members, projects) -> dict:
     """整体替换用户的团队数据（本地新建工作区/项目后同步上来）。"""
     with session() as s:

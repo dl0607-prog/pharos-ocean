@@ -396,6 +396,22 @@ def add_member(body: MemberBody, user: dict = Depends(auth.current_user)):
     return {"member": member}
 
 
+@app.put("/api/team/members/{mid}")
+def update_member(mid: str, body: MemberBody, user: dict = Depends(auth.current_user)):
+    member = database.update_member(user["id"], mid, (body.name or "").strip()[:60],
+                                    (body.role or "")[:20], (body.title or "").strip()[:60])
+    if member is None:
+        raise HTTPException(status_code=404, detail="成员不存在")
+    return {"member": member}
+
+
+@app.delete("/api/team/members/{mid}")
+def remove_member(mid: str, user: dict = Depends(auth.current_user)):
+    if not database.delete_member(user["id"], mid):
+        raise HTTPException(status_code=404, detail="成员不存在")
+    return {"ok": True}
+
+
 @app.put("/api/team")
 def save_team(body: TeamBody, user: dict = Depends(auth.current_user)):
     return database.replace_team(user["id"], body.workspaces, body.members, body.projects)

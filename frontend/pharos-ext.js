@@ -200,9 +200,101 @@
     });
   }
 
-  /* ══════════════ 团队 / 工作区 / 项目：接后端 ══════════════
-     原版里成员/工作区/项目是写死的演示数据。这里在登录后把它们替换成
-     当前账号的真实数据，并把「新建工作区/项目」同步到服务器。 */
+  /* ══════════════ 团队成员：查看视图里可直接编辑/删除 ══════════════ */
+  function hookTeamEdit() {
+    var UI = window.LH_UI;
+    if (!UI || !UI.renderMain || UI.renderMain.__phx) return;
+    var orig = UI.renderMain;
+    UI.renderMain = function () {
+      orig.apply(UI, arguments);
+      decorateTeamView();
+    };
+    UI.renderMain.__phx = true;
+  }
+
+  function decorateTeamView() {
+    var UI = window.LH_UI, E = window.LH_ENGINE;
+    if (!UI || !E || UI.S.view !== "team") return;
+    var main = document.getElementById("mainInner");
+    var tbl = main.querySelector(".tbl");
+    if (!tbl) return;
+    var rows = tbl.querySelectorAll("tbody tr");
+    var members = E.membersOf() || [];
+    rows.forEach(function (tr, i) {
+      var m = members[i];
+      if (!m) return;
+      var last = tr.lastElementChild;
+      if (!last || last.querySelector("[data-phx-edit]")) return;
+      var isMe = E.state.me === m.id;
+      var editBtn = document.createElement("button");
+      editBtn.className = "btn xs";
+      editBtn.setAttribute("data-phx-edit", m.id);
+      editBtn.textContent = "✏️ 编辑";
+      var delBtn = document.createElement("button");
+      delBtn.className = "btn xs danger";
+      delBtn.setAttribute("data-phx-del", m.id);
+      delBtn.textContent = "🗑";
+      delBtn.title = isMe ? "不能删除自己" : "移除成员";
+      last.appendChild(document.createTextNode(" "));
+      last.appendChild(editBtn);
+      if (!isMe) { last.appendChild(document.createTextNode(" ")); last.appendChild(delBtn); }
+    });
+  }
+
+  document.addEventListener("click", function (e) {
+    var editId = e.target && e.target.getAttribute && e.target.getAttribute("data-phx-edit");
+    var delId = e.target && e.target.getAttribute && e.target.getAttribute("data-phx-del");
+    if (editId) { e.stopPropagation(); openMemberEditModal(editId); }
+    if (delId) {
+      e.stopPropagation();
+      var E = window.LH_ENGINE;
+      var m = (E && E.member(delId)) || {};
+      if (!confirm("移除成员 " + (m.name || "") + "？")) return;
+      api("/api/team/members/" + delId, { method: "DELETE" }).then(function () {
+        toast("已移除成员");
+        loadTeam();
+      }).catch(function (err) { toast(err.message, "bad"); });
+    }
+  });
+
+  function openMemberEditModal(mid) {
+    var E = window.LH_ENGINE;
+    var m = (E && E.member(mid)) || {};
+    var roleOptions = [
+      ["owner", "Owner · 负责人"], ["ops", "Ops · 运营"], ["content", "Content · 内容"],
+      ["compliance", "Compliance · 合规"], ["viewer", "Viewer · 只读"],
+    ];
+    var modal = openModal(
+      '<div class="modal-head"><h3>✏️ 编辑成员</h3><button class="modal-close">✕</button></div>'
+      + '<div class="modal-body">'
+      + '<div class="phx-field"><label>成员姓名</label><input id="phx-e-name" value="' + esc(m.name || "") + '"></div>'
+      + '<div class="phx-field"><label>角色</label><select id="phx-e-role">'
+      + roleOptions.map(function (o) {
+          return '<option value="' + o[0] + '"' + ((m.role || "member") === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
+        }).join("")
+      + "</select></div>"
+      + '<div class="phx-field"><label>职位</label><input id="phx-e-title" value="' + esc(m.title || "") + '"></div>'
+      + '<div class="modal-actions"><button class="btn-primary" id="phx-e-save" style="flex:1;padding:11px;border:none;border-radius:980px;color:#fff;background:linear-gradient(135deg,#6366F1,#8B5CF6);cursor:pointer;font-size:14px;font-weight:650">保存</button>'
+      + '<button class="btn" id="phx-e-cancel">取消</button></div></div>'
+    );
+    $("#phx-e-cancel", modal).onclick = closeModal;
+    $("#phx-e-save", modal).onclick = function () {
+      var name = $("#phx-e-name", modal).value.trim();
+      if (!name) { toast("请填写成员姓名", "bad"); return; }
+      api("/api/team/members/" + mid, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: name,
+          role: $("#phx-e-role", modal).value,
+          title: $("#phx-e-title", modal).value.trim() || "成员",
+        }),
+      }).then(function () {
+        closeModal();
+        toast("已保存", "ok");
+        loadTeam();
+      }).catch(function (e) { toast(e.message, "bad"); });
+    };
+  }
 
   function applyTeam(team) {
     var D = window.LH_DATA, E = window.LH_ENGINE, UI = window.LH_UI;
@@ -228,6 +320,10 @@
     E.state.me = owner.id;
     E.state.ws = ws[0].id;
     E.state.project = projects[0].id;
+    /* 清掉引用已不存在成员的演示活动（避免「Unknown」记录） */
+    var ids = {};
+    members.forEach(function (m) { ids[m.id] = 1; });
+    E.state.activities = (E.state.activities || []).filter(function (a) { return ids[a.who]; });
     if (UI.renderAll) UI.renderAll();
   }
 
@@ -380,6 +476,46 @@
     injectSidebarNav();
   }
 
+  /* 团队动态为空时给一句提示（不留空白块，也不造假数据） */
+  function hookRailEmptyState() {
+    var UI = window.LH_UI;
+    if (!UI || !UI.renderRail || UI.renderRail.__phx) return;
+    var orig = UI.renderRail;
+    UI.renderRail = function () {
+      orig.apply(UI, arguments);
+      var feed = document.querySelector("#rail .feed");
+      if (feed && !feed.children.length) {
+        feed.innerHTML = '<div class="feed-i"><div class="fc" style="color:rgba(128,128,154,.9)">' +
+          "暂无动态 —— 你与团队的每次决策、每个任务都会记录在这里。</div></div>";
+      }
+    };
+    UI.renderRail.__phx = true;
+  }
+
+  /* ══════════════ 首页「开始出海」大按钮 ══════════════
+     出海启动是产品核心,放在登录后第一眼能看到的地方。 */
+  function hookOverviewCta() {
+    var UI = window.LH_UI;
+    if (!UI || !UI.views || !UI.views.overview || UI.views.overview.__phx) return;
+    var orig = UI.views.overview;
+    UI.views.overview = function () {
+      var html = orig.apply(this, arguments);
+      var banner =
+        '<div class="next-hint" style="margin-bottom:16px;background:linear-gradient(135deg, rgba(245,158,11,.16), rgba(99,102,241,.12));border-color:rgba(245,158,11,.45)">' +
+        '<span class="nh-badge" style="background:linear-gradient(135deg,#F59E0B,#F97316)">🚀 出海启动</span>' +
+        '<span class="nh-text"><b>不知道怎么出海？</b>填一份资料，AI 直接给你专属出海方案 —— 首选平台、阶段任务、预算清单，照着做就能开第一单。</span>' +
+        '<button class="btn beacon" id="phx-ov-launch">开始出海 →</button>' +
+        '<button class="btn" id="phx-ov-platforms">🔗 平台对接</button>' +
+        "</div>";
+      return banner + html;
+    };
+    UI.views.overview.__phx = true;
+    document.addEventListener("click", function (e) {
+      if (e.target && e.target.id === "phx-ov-launch") { e.stopPropagation(); openPanel("launch"); }
+      if (e.target && e.target.id === "phx-ov-platforms") { e.stopPropagation(); openPanel("platforms"); }
+    });
+  }
+
   function injectSidebarNav() {
     var sb = document.getElementById("sidebar");
     if (!sb || document.getElementById("phx-side-nav")) return;
@@ -390,7 +526,7 @@
       '<button class="nav-i" id="phx-nav-launch"><span class="ic">🚀</span><span class="t">出海启动</span></button>' +
       '<button class="nav-i" id="phx-nav-platforms"><span class="ic">🔗</span><span class="t">平台对接</span></button>' +
       '<button class="nav-i" id="phx-nav-member"><span class="ic">👥</span><span class="t">添加成员</span></button>';
-    sb.appendChild(block);   // 放在左侧栏底部（左下角）
+    sb.insertBefore(block, sb.firstChild);   // 放在左侧栏最顶部，一眼可见
     document.getElementById("phx-nav-launch").addEventListener("click", function () { openPanel("launch"); });
     document.getElementById("phx-nav-platforms").addEventListener("click", function () { openPanel("platforms"); });
     document.getElementById("phx-nav-member").addEventListener("click", openMemberModal);
@@ -887,6 +1023,8 @@
     hookCfgSave();
     watchArea();
     hookTeamPersist();
+    hookTeamEdit();
+    hookOverviewCta();
     if (token()) {
       api("/api/auth/me").then(function (r) {
         afterAuth(r.user);
