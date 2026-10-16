@@ -1,0 +1,288 @@
+/* PHAROS 出海工作台 · 扩展层样式
+   原则：不改动原版任何样式与布局（原版卡片/面板/右侧工作台全部保持原样），
+   仅为本扩展层自身的组件（登录门槛、悬浮入口、出海启动/平台对接面板）提供
+   与原版设计语言一致的样式。 */
+
+/* ══ 登录门槛 ═══════════════════════════════════════ */
+
+#phx-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(6, 26, 44, .38), rgba(4, 16, 30, .58));
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+  backdrop-filter: blur(10px) saturate(130%);
+}
+#phx-gate[hidden] { display: none; }
+
+.phx-gate-card {
+  width: min(400px, 100%);
+  border-radius: 22px;
+  padding: 26px 28px 22px;
+  background: rgba(255, 255, 255, .92);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  backdrop-filter: blur(26px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, .85);
+  box-shadow: 0 40px 100px -40px rgba(8, 22, 44, .65), inset 0 1px 0 rgba(255, 255, 255, .95);
+  color: #14203A;
+  animation: modalIn .34s cubic-bezier(.32, .72, 0, 1) both;
+}
+.phx-gate-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.phx-gate-brand svg { width: 28px; height: 28px; }
+.phx-gate-brand b { font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
+.phx-gate-sub { font-size: 12.5px; color: rgba(20, 32, 56, .62); margin: 4px 0 18px; line-height: 1.6; }
+
+.phx-tabs {
+  display: flex; gap: 4px; padding: 4px; margin-bottom: 16px;
+  background: rgba(20, 32, 56, .06); border-radius: 980px;
+}
+.phx-tabs > button {
+  flex: 1; padding: 8px 0; border: none; border-radius: 980px; cursor: pointer;
+  background: transparent; color: rgba(20, 32, 56, .66); font: inherit; font-size: 13px; font-weight: 600;
+  transition: all .18s cubic-bezier(.32, .72, 0, 1);
+}
+.phx-tabs > button.on {
+  background: #fff; color: #4B3FD6;
+  box-shadow: 0 4px 14px -6px rgba(20, 32, 56, .35);
+}
+
+.phx-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.phx-field > label { font-size: 12px; font-weight: 650; color: rgba(20, 32, 56, .72); }
+.phx-field input, .phx-field select {
+  padding: 10px 13px; border-radius: 11px; font: inherit; font-size: 13.5px;
+  border: 1px solid rgba(20, 32, 56, .16);
+  background: rgba(255, 255, 255, .85);
+  color: #14203A; outline: none;
+  transition: all .18s cubic-bezier(.32, .72, 0, 1);
+}
+.phx-field input:focus, .phx-field select:focus {
+  border-color: #5B50E9;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, .16);
+}
+.phx-agree { display: flex; align-items: center; gap: 7px; font-size: 12px; color: rgba(20, 32, 56, .66); margin: 2px 0 12px; cursor: pointer; }
+.phx-agree input { accent-color: #5B50E9; }
+
+.phx-btn-primary {
+  width: 100%; padding: 11px; border: none; border-radius: 980px; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 650; color: #fff;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  box-shadow: 0 12px 26px -12px rgba(99, 102, 241, .85), inset 0 1px 0 rgba(255, 255, 255, .3);
+  transition: filter .18s;
+}
+.phx-btn-primary:hover { filter: brightness(1.06); }
+.phx-btn-primary:disabled { filter: grayscale(.5); opacity: .6; cursor: not-allowed; }
+.phx-gate-err { min-height: 16px; margin-top: 9px; font-size: 12.5px; color: #E02424; text-align: center; }
+.phx-gate-foot { margin-top: 14px; font-size: 11px; color: rgba(20, 32, 56, .5); text-align: center; }
+
+/* 顶栏账号徽标 */
+.phx-user {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 4px 6px 4px 12px; border-radius: 980px;
+  border: 1px solid var(--glass-line);
+  background: var(--surface-2, rgba(255, 255, 255, .5));
+  font-size: 12.5px; font-weight: 600; flex: none;
+}
+body.has-sea .phx-user { background: rgba(255, 255, 255, .8); border-color: rgba(20, 32, 56, .14); color: #14203A; }
+.phx-user .phx-out {
+  border: none; background: transparent; cursor: pointer; font: inherit;
+  padding: 2px 7px; border-radius: 999px; color: inherit; opacity: .7;
+}
+.phx-user .phx-out:hover { opacity: 1; background: rgba(224, 36, 36, .12); color: #E02424; }
+
+/* ══ 悬浮入口（出海启动 / 平台对接） ═════════════════ */
+
+#phx-dock {
+  position: fixed; right: 18px; bottom: 18px; z-index: 90;
+  display: flex; flex-direction: column; gap: 9px; align-items: flex-end;
+}
+body.ph-site #phx-dock { display: none; }   /* 海面入口页不显示，进入工作台后出现 */
+
+.phx-dock-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 980px; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 650; letter-spacing: .01em;
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, .88);
+  color: #14203A;
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: 0 16px 40px -20px rgba(8, 22, 44, .55), inset 0 1px 0 rgba(255, 255, 255, .9);
+  transition: transform .18s cubic-bezier(.32, .72, 0, 1), box-shadow .18s;
+}
+.phx-dock-btn:hover { transform: translateY(-2px); box-shadow: 0 22px 48px -20px rgba(8, 22, 44, .6); }
+.phx-dock-btn.primary {
+  border-color: transparent; color: #fff;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  box-shadow: 0 18px 40px -16px rgba(99, 102, 241, .8), inset 0 1px 0 rgba(255, 255, 255, .3);
+}
+
+/* ══ 扩展面板（复用原版 .modal 外观） ═══════════════ */
+
+.phx-panel { width: min(1060px, 100%); padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; }
+.phx-panel-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--hair, rgba(20, 20, 45, .08));
+  flex: none;
+}
+.phx-panel-head .ico {
+  width: 38px; height: 38px; border-radius: 12px; flex: none; display: grid; place-items: center;
+  font-size: 18px; color: #fff;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  box-shadow: 0 10px 24px -10px rgba(99, 102, 241, .8);
+}
+.phx-panel-head h2 { font-size: 18px; letter-spacing: -.022em; }
+.phx-panel-head .sub { font-size: 12px; color: var(--ink-3, #80809A); margin-top: 2px; }
+.phx-panel-head .sp { flex: 1; }
+.phx-x {
+  border: none; background: transparent; cursor: pointer; font: inherit;
+  font-size: 16px; padding: 6px 11px; border-radius: 980px; color: var(--ink-3, #80809A);
+}
+.phx-x:hover { background: var(--surface-3, rgba(20, 20, 45, .06)); color: var(--ink, #14142B); }
+.phx-panel-body { padding: 20px 24px 26px; overflow-y: auto; }
+
+/* 向导步骤条（沿用原版 .fstep 观感） */
+.phx-steps { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.phx-step {
+  flex: 1; min-width: 130px; cursor: pointer;
+  padding: 10px 13px; border-radius: 12px;
+  border: 1px solid rgba(20, 20, 45, .08);
+  background: rgba(255, 255, 255, .55);
+  transition: all .18s cubic-bezier(.32, .72, 0, 1);
+}
+.phx-step:hover { transform: translateY(-1px); box-shadow: 0 10px 22px -16px rgba(8, 22, 44, .4); }
+.phx-step .n { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; color: var(--ink-3, #80809A); }
+.phx-step .n i {
+  width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(20, 20, 45, .08); color: var(--ink-3, #80809A);
+  font-style: normal; font-size: 10.5px;
+}
+.phx-step .t { font-size: 13px; font-weight: 650; margin-top: 4px; letter-spacing: -.01em; }
+.phx-step.done { background: rgba(16, 185, 129, .12); border-color: transparent; }
+.phx-step.done .n i { background: #10B981; color: #fff; }
+.phx-step.now { background: linear-gradient(135deg, #6366F1, #8B5CF6); border-color: transparent; color: #fff; box-shadow: 0 12px 26px -12px rgba(99, 102, 241, .8); }
+.phx-step.now .n, .phx-step.now .n i { color: #fff; }
+.phx-step.now .n i { background: rgba(255, 255, 255, .28); }
+
+/* 选项卡片 */
+.phx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.phx-chip {
+  cursor: pointer; font: inherit; font-size: 12.5px; padding: 6px 15px; border-radius: 980px;
+  border: 1px solid rgba(20, 20, 45, .14); background: rgba(255, 255, 255, .6);
+  color: var(--ink-2, #55556E);
+  transition: all .18s cubic-bezier(.32, .72, 0, 1);
+}
+.phx-chip:hover { border-color: #6366F1; color: #5B5BF5; }
+.phx-chip.on {
+  border-color: transparent; color: #fff;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  box-shadow: 0 10px 22px -10px rgba(99, 102, 241, .8);
+}
+
+.phx-label { font-size: 12.5px; font-weight: 650; color: var(--ink-2, #55556E); margin: 4px 0 8px; }
+.phx-block { margin-bottom: 18px; }
+.phx-actions { display: flex; gap: 10px; margin-top: 20px; align-items: center; }
+.phx-actions .sp { flex: 1; }
+
+/* 结果区 */
+.phx-route {
+  position: relative; overflow: hidden;
+  border: 1px solid rgba(99, 102, 241, .3); border-radius: 16px;
+  background: linear-gradient(150deg, rgba(99, 102, 241, .12), rgba(255, 255, 255, .6) 60%);
+  padding: 20px 22px; margin-bottom: 16px;
+}
+.phx-route .badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 700; color: #4B3FD6;
+  background: rgba(99, 102, 241, .14); border-radius: 980px; padding: 4px 12px; margin-bottom: 10px;
+}
+.phx-route h3 { font-size: 22px; letter-spacing: -.028em; margin-bottom: 8px; }
+.phx-route .why { font-size: 13px; color: var(--ink-2, #55556E); line-height: 1.65; }
+.phx-route .alt { margin-top: 10px; font-size: 12px; color: var(--ink-3, #80809A); }
+
+.phx-tl { display: flex; flex-direction: column; }
+.phx-tl .item { display: flex; gap: 14px; position: relative; padding-bottom: 18px; }
+.phx-tl .item::before {
+  content: ""; position: absolute; left: 6px; top: 18px; bottom: 0; width: 2px;
+  background: linear-gradient(180deg, rgba(99, 102, 241, .5), transparent);
+}
+.phx-tl .item:last-child::before { display: none; }
+.phx-tl .dot {
+  width: 14px; height: 14px; border-radius: 50%; flex: none; margin-top: 3px;
+  background: #6366F1; box-shadow: 0 0 12px rgba(99, 102, 241, .65);
+}
+.phx-tl .ph { font-size: 14px; font-weight: 700; letter-spacing: -.014em; margin-bottom: 5px; }
+.phx-tl .tk { font-size: 13px; color: var(--ink-2, #55556E); padding: 2.5px 0; display: flex; gap: 8px; line-height: 1.55; }
+.phx-tl .tk::before { content: "▸"; color: #6366F1; flex: none; }
+
+.phx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.phx-table th, .phx-table td { border-bottom: 1px solid rgba(20, 20, 45, .08); padding: 9px 12px; text-align: left; }
+.phx-table thead th { font-size: 11px; font-weight: 700; color: var(--ink-3, #80809A); background: rgba(20, 20, 45, .03); }
+.phx-table tr:last-child td { border-bottom: none; }
+.phx-fit-high { color: #0E9F6E; font-weight: 650; }
+.phx-fit-mid { color: #C27803; font-weight: 650; }
+.phx-fit-low { color: var(--ink-3, #80809A); }
+
+.phx-li { position: relative; padding-left: 20px; margin-bottom: 7px; font-size: 13px; color: var(--ink-2, #55556E); line-height: 1.6; }
+.phx-li::before { content: attr(data-ico); position: absolute; left: 0; top: 1px; font-size: 12px; }
+.phx-li.warn { color: #B4301F; }
+
+.phx-loading { text-align: center; padding: 46px 20px; }
+.phx-loading .spinner {
+  width: 22px; height: 22px; margin: 0 auto 14px; border-radius: 50%;
+  border: 3px solid rgba(99, 102, 241, .18); border-top-color: #6366F1;
+  animation: spin .8s linear infinite;
+}
+.phx-loading p { font-size: 13px; color: var(--ink-2, #55556E); line-height: 1.7; }
+
+/* 平台卡片 */
+.phx-plat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 900px) { .phx-plat-grid { grid-template-columns: 1fr; } }
+.phx-plat {
+  border: 1px solid rgba(20, 20, 45, .1); border-radius: 16px;
+  background: rgba(255, 255, 255, .66);
+  padding: 16px 18px; display: flex; flex-direction: column;
+  transition: all .18s cubic-bezier(.32, .72, 0, 1);
+}
+.phx-plat:hover { border-color: rgba(99, 102, 241, .4); box-shadow: 0 18px 40px -24px rgba(8, 22, 44, .45); transform: translateY(-2px); }
+.phx-plat .hd { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.phx-plat .hd .ic { font-size: 26px; }
+.phx-plat .hd b { font-size: 15.5px; letter-spacing: -.018em; }
+.phx-plat .hd .rg { font-size: 11.5px; color: var(--ink-3, #80809A); }
+.phx-plat .mode { font-size: 12.5px; color: var(--ink-2, #55556E); margin-bottom: 3px; }
+.phx-plat .fees { font-size: 12px; color: var(--ink-3, #80809A); margin-bottom: 10px; }
+.phx-plat .entry { font-size: 12px; color: var(--ink-2, #55556E); line-height: 1.6; margin: 0 0 10px; padding-left: 16px; }
+.phx-plat .fit { font-size: 11.5px; color: var(--ink-3, #80809A); margin-bottom: 12px; line-height: 1.55; }
+.phx-status { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.phx-status .st {
+  cursor: pointer; font: inherit; font-size: 11.5px; padding: 4px 12px; border-radius: 980px;
+  border: 1px solid rgba(20, 20, 45, .14); background: rgba(255, 255, 255, .6); color: var(--ink-3, #80809A);
+  transition: all .16s;
+}
+.phx-status .st.on { border-color: transparent; color: #fff; background: linear-gradient(135deg, #6366F1, #8B5CF6); font-weight: 650; }
+.phx-status .st.on[data-s="opened"] { background: linear-gradient(135deg, #10B981, #0E9F6E); }
+.phx-status .st.on[data-s="submitted"] { background: linear-gradient(135deg, #06B6D4, #0EA5E9); }
+.phx-plat .ops { margin-top: auto; display: flex; gap: 8px; }
+.phx-plat .ops .btn { flex: 1; }
+
+/* 扩展层 Toast */
+#phx-toasts {
+  position: fixed; right: 20px; bottom: 96px; z-index: 400;
+  display: flex; flex-direction: column; gap: 9px; align-items: flex-end;
+}
+.phx-toast {
+  max-width: 380px; padding: 12px 16px; border-radius: 14px;
+  background: rgba(255, 255, 255, .94); color: #14203A;
+  border: 1px solid rgba(255, 255, 255, .8);
+  box-shadow: 0 24px 60px -24px rgba(8, 22, 44, .6);
+  font-size: 13px; line-height: 1.55;
+  animation: modalIn .3s cubic-bezier(.32, .72, 0, 1) both;
+}
+.phx-toast.bad { color: #B4301F; }
+.phx-toast.ok { color: #0E7A54; }
+
+/* 面板处在深色主题（未上海面主题）时的兜底 */
+.phx-panel { background: #fff; color: #14203A; }
+.phx-panel .phx-field input, .phx-panel .phx-field select { background: rgba(255, 255, 255, .9); color: #14203A; }

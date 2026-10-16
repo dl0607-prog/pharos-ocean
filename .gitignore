@@ -1,3 +1,8 @@
 .mimosa/
 .DS_Store
 .video_agent/
+.venv/
+__pycache__/
+*.pyc
+.env
+data/
