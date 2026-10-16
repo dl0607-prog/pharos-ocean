@@ -363,6 +363,44 @@ async def platform_guide(pid: str, user: dict = Depends(auth.current_user)):
     return {"guide": result}
 
 
+# ── 团队 / 工作区 / 项目（原版团队视图的真实后端）────────────────────
+
+class MemberBody(BaseModel):
+    ws: str = ""
+    name: str = ""
+    role: str = "member"
+    title: str = ""
+
+
+class TeamBody(BaseModel):
+    workspaces: list = []
+    members: list = []
+    projects: list = []
+
+
+@app.get("/api/team")
+def get_team(user: dict = Depends(auth.current_user)):
+    return database.seed_team(user["id"], user.get("company") or "", user["username"])
+
+
+@app.post("/api/team/members")
+def add_member(body: MemberBody, user: dict = Depends(auth.current_user)):
+    name = (body.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="成员姓名不能为空")
+    team = database.get_team(user["id"])
+    ws = body.ws or (team["workspaces"][0]["id"] if team["workspaces"] else "")
+    member = database.add_member(user["id"], ws, name[:60],
+                                 (body.role or "member")[:20],
+                                 (body.title or "成员")[:60])
+    return {"member": member}
+
+
+@app.put("/api/team")
+def save_team(body: TeamBody, user: dict = Depends(auth.current_user)):
+    return database.replace_team(user["id"], body.workspaces, body.members, body.projects)
+
+
 # ── 前端静态托管 ───────────────────────────────────────────────────
 
 if config.FRONTEND_DIR.exists():

@@ -76,6 +76,39 @@ class PlatformLink(Base):
     updated_at: Mapped[float] = mapped_column(default=0.0)
 
 
+class Workspace(Base):
+    __tablename__ = "workspaces"
+    id: Mapped[str] = mapped_column(String(24), primary_key=True)
+    user_id: Mapped[int] = mapped_column(index=True)
+    name: Mapped[str] = mapped_column(String(100), default="")
+    short: Mapped[str] = mapped_column(String(10), default="")
+    plan: Mapped[str] = mapped_column(String(40), default="")
+    owner_id: Mapped[str] = mapped_column(String(24), default="")
+    desc: Mapped[str] = mapped_column(Text, default="")
+
+
+class Member(Base):
+    __tablename__ = "members"
+    id: Mapped[str] = mapped_column(String(24), primary_key=True)
+    user_id: Mapped[int] = mapped_column(index=True)
+    ws: Mapped[str] = mapped_column(String(24), default="")
+    name: Mapped[str] = mapped_column(String(100), default="")
+    role: Mapped[str] = mapped_column(String(20), default="member")
+    title: Mapped[str] = mapped_column(String(60), default="")
+
+
+class Project(Base):
+    __tablename__ = "projects"
+    id: Mapped[str] = mapped_column(String(24), primary_key=True)
+    user_id: Mapped[int] = mapped_column(index=True)
+    ws: Mapped[str] = mapped_column(String(24), default="")
+    name: Mapped[str] = mapped_column(String(100), default="")
+    product: Mapped[str] = mapped_column(String(100), default="")
+    market: Mapped[str] = mapped_column(String(60), default="")
+    platform: Mapped[str] = mapped_column(String(60), default="")
+    created_at: Mapped[float] = mapped_column(default=0.0)
+
+
 _engine = create_engine(
     "sqlite:///" + str(config.DB_PATH),
     connect_args={"check_same_thread": False},
@@ -317,3 +350,87 @@ def save_link(user_id: int, platform_id: str, status: str,
             l.updated_at = now
         s.flush()
         return _link_dict(l)
+
+
+# ── 团队 / 工作区 / 项目（原版团队视图的真实后端）──────────────
+
+def _ws_dict(w: Workspace) -> dict:
+    return {"id": w.id, "name": w.name, "short": w.short, "plan": w.plan,
+            "owner": w.owner_id, "desc": w.desc}
+
+
+def _member_dict(m: Member) -> dict:
+    return {"id": m.id, "ws": m.ws, "name": m.name, "role": m.role, "title": m.title}
+
+
+def _project_dict(p: Project) -> dict:
+    return {"id": p.id, "ws": p.ws, "name": p.name, "product": p.product,
+            "market": p.market, "platform": p.platform}
+
+
+def get_team(user_id: int) -> dict:
+    with session() as s:
+        ws = [_ws_dict(r) for r in s.query(Workspace).filter(Workspace.user_id == user_id).all()]
+        ms = [_member_dict(r) for r in s.query(Member).filter(Member.user_id == user_id).all()]
+        ps = [_project_dict(r) for r in s.query(Project).filter(Project.user_id == user_id).all()]
+    return {"workspaces": ws, "members": ms, "projects": ps}
+
+
+def seed_team(user_id: int, company: str, username: str) -> dict:
+    """首次访问：为用户建默认团队（工作区 + 本人为 owner + 第一个项目）。"""
+    with session() as s:
+        exists = s.query(Workspace).filter(Workspace.user_id == user_id).first()
+        if exists is not None:
+            return get_team(user_id)
+        ws_id = uuid.uuid4().hex[:12]
+        owner_id = uuid.uuid4().hex[:12]
+        prj_id = uuid.uuid4().hex[:12]
+        wname = (company or "我的出海团队").strip()[:60]
+        s.add(Workspace(id=ws_id, user_id=user_id, name=wname,
+                        short=(username or "U")[:2], plan="Free",
+                        owner_id=owner_id, desc="我的出海团队"))
+        s.add(Member(id=owner_id, user_id=user_id, ws=ws_id, name=username or "我",
+                     role="owner", title="Owner"))
+        s.add(Project(id=prj_id, user_id=user_id, ws=ws_id,
+                      name="第一个出海项目", product="待定", market="美国", platform="待定",
+                      created_at=time.time()))
+    return get_team(user_id)
+
+
+def add_member(user_id: int, ws: str, name: str, role: str, title: str) -> dict:
+    with session() as s:
+        m = Member(id=uuid.uuid4().hex[:12], user_id=user_id, ws=ws,
+                   name=name, role=role, title=title)
+        s.add(m)
+        s.flush()
+        return _member_dict(m)
+
+
+def replace_team(user_id: int, workspaces, members, projects) -> dict:
+    """整体替换用户的团队数据（本地新建工作区/项目后同步上来）。"""
+    with session() as s:
+        s.query(Project).filter(Project.user_id == user_id).delete()
+        s.query(Member).filter(Member.user_id == user_id).delete()
+        s.query(Workspace).filter(Workspace.user_id == user_id).delete()
+        for w in (workspaces or []):
+            s.add(Workspace(id=str(w.get("id") or uuid.uuid4().hex[:12]),
+                            user_id=user_id, name=str(w.get("name") or "")[:100],
+                            short=str(w.get("short") or "")[:10],
+                            plan=str(w.get("plan") or "")[:40],
+                            owner_id=str(w.get("owner") or "")[:24],
+                            desc=str(w.get("desc") or "")[:500]))
+        for m in (members or []):
+            s.add(Member(id=str(m.get("id") or uuid.uuid4().hex[:12]),
+                         user_id=user_id, ws=str(m.get("ws") or "")[:24],
+                         name=str(m.get("name") or "")[:100],
+                         role=str(m.get("role") or "member")[:20],
+                         title=str(m.get("title") or "")[:60]))
+        for p in (projects or []):
+            s.add(Project(id=str(p.get("id") or uuid.uuid4().hex[:12]),
+                          user_id=user_id, ws=str(p.get("ws") or "")[:24],
+                          name=str(p.get("name") or "")[:100],
+                          product=str(p.get("product") or "")[:100],
+                          market=str(p.get("market") or "")[:60],
+                          platform=str(p.get("platform") or "")[:60],
+                          created_at=time.time()))
+    return get_team(user_id)

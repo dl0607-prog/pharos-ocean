@@ -20,6 +20,25 @@
 .rail .gate-opts { padding: 0 14px 14px; gap: 8px; }
 .rail .gate-f { padding: 10px 16px; }
 
+/* ══ 顶栏搜索框 / 账号区可见性（海面主题下白框浅字看不清 → 浅灰 + 深字）══ */
+body.has-sea .topbar-search {
+  background: rgba(20, 32, 56, .10);
+  border: 1px solid rgba(20, 32, 56, .10);
+  color: #14203A;
+}
+body.has-sea .topbar-search .grow { color: rgba(20, 32, 56, .66); }
+body.has-sea .topbar-search .kbd { color: rgba(20, 32, 56, .45); }
+body.has-sea .ws-switch {
+  background: rgba(20, 32, 56, .07);
+  border-color: rgba(20, 32, 56, .12);
+}
+body.has-sea .ws-switch .ws-name,
+body.has-sea .ws-switch .ws-plan { color: #14203A; }
+body.has-sea .ws-switch .muted-3 { color: rgba(20, 32, 56, .5); }
+
+/* 左侧栏「出海工作台」入口 */
+#phx-side-nav .nav-i { margin: 1px 0; }
+
 /* ══ 登录门槛 ═══════════════════════════════════════ */
 
 #phx-gate {

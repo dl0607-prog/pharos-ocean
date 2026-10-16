@@ -187,16 +187,67 @@
 
   function afterAuth(user) {
     currentUser = user || null;
-    hideGate();
-    mountAccountChip();
-    ensureRightRail();
-    toast("欢迎回来，" + ((user && user.username) || "商家"), "ok");
-    if (user && user.company) {
-      /* 公司名写入欢迎语，不做其它侵入性改动 */
-      mountChipText();
-    }
-    syncCfgWithServer();
-    mountDock();
+    loadTeam().then(function () {
+      hideGate();
+      mountAccountChip();
+      ensureRightRail();
+      toast("欢迎回来，" + ((user && user.username) || "商家"), "ok");
+      if (user && user.company) {
+        mountChipText();
+      }
+      syncCfgWithServer();
+      mountSidebarNav();
+    });
+  }
+
+  /* ══════════════ 团队 / 工作区 / 项目：接后端 ══════════════
+     原版里成员/工作区/项目是写死的演示数据。这里在登录后把它们替换成
+     当前账号的真实数据，并把「新建工作区/项目」同步到服务器。 */
+
+  function applyTeam(team) {
+    var D = window.LH_DATA, E = window.LH_ENGINE, UI = window.LH_UI;
+    if (!D || !E) return;
+    var ws = (team.workspaces || []).map(function (w) {
+      return { id: w.id, name: w.name, short: w.short || w.name.slice(0, 2),
+               plan: w.plan || "Free", owner: w.owner, desc: w.desc || "" };
+    });
+    var members = (team.members || []).map(function (m) {
+      return { id: m.id, ws: m.ws, name: m.name, role: m.role || "member",
+               title: m.title || "", initial: (m.name || "?").slice(0, 1).toUpperCase(),
+               online: true, lastSeen: "在线", load: "" };
+    });
+    var projects = (team.projects || []).map(function (p, i) {
+      return { id: p.id, ws: p.ws, name: p.name, sku: "1 SKU", progress: 0,
+               gate: 0, members: [], current: i === 0 };
+    });
+    if (!ws.length || !members.length) return;   // 后端无数据则保持原样
+    D.members = members;
+    D.workspaces = ws;
+    D.projects = projects;
+    var owner = members.filter(function (m) { return m.role === "owner"; })[0] || members[0];
+    E.state.me = owner.id;
+    E.state.ws = ws[0].id;
+    E.state.project = projects[0].id;
+    if (UI.renderAll) UI.renderAll();
+  }
+
+  function loadTeam() {
+    return api("/api/team").then(function (team) {
+      applyTeam(team);
+    }).catch(function () { /* 后端不可用时保留原版数据 */ });
+  }
+
+  function persistTeam() {
+    var D = window.LH_DATA;
+    if (!D) return;
+    api("/api/team", {
+      method: "PUT",
+      body: JSON.stringify({
+        workspaces: D.workspaces || [],
+        members: D.members || [],
+        projects: D.projects || [],
+      }),
+    }).catch(function () { /* 静默 */ });
   }
 
   function mountChipText() {
@@ -317,16 +368,81 @@
 
   /* ══════════════ 4. 悬浮入口（出海启动 / 平台对接） ══════════════ */
 
-  function mountDock() {
-    if ($("#phx-dock")) return;
-    var dock = document.createElement("div");
-    dock.id = "phx-dock";
-    dock.innerHTML =
-      '<button type="button" class="phx-dock-btn primary" id="phx-dock-launch">🚀 出海启动</button>' +
-      '<button type="button" class="phx-dock-btn" id="phx-dock-platforms">🔗 平台对接</button>';
-    document.body.appendChild(dock);
-    $("#phx-dock-launch", dock).addEventListener("click", function () { openPanel("launch"); });
-    $("#phx-dock-platforms", dock).addEventListener("click", function () { openPanel("platforms"); });
+  function mountSidebarNav() {
+    var UI = window.LH_UI;
+    if (!UI || !UI.renderSidebar || UI.renderSidebar.__phx) return;
+    var orig = UI.renderSidebar;
+    UI.renderSidebar = function () {
+      orig.apply(UI, arguments);
+      injectSidebarNav();
+    };
+    UI.renderSidebar.__phx = true;
+    injectSidebarNav();
+  }
+
+  function injectSidebarNav() {
+    var sb = document.getElementById("sidebar");
+    if (!sb || document.getElementById("phx-side-nav")) return;
+    var block = document.createElement("div");
+    block.id = "phx-side-nav";
+    block.innerHTML =
+      '<div class="nav-sec">出海工作台</div>' +
+      '<button class="nav-i" id="phx-nav-launch"><span class="ic">🚀</span><span class="t">出海启动</span></button>' +
+      '<button class="nav-i" id="phx-nav-platforms"><span class="ic">🔗</span><span class="t">平台对接</span></button>' +
+      '<button class="nav-i" id="phx-nav-member"><span class="ic">👥</span><span class="t">添加成员</span></button>';
+    sb.insertBefore(block, sb.firstChild);
+    document.getElementById("phx-nav-launch").addEventListener("click", function () { openPanel("launch"); });
+    document.getElementById("phx-nav-platforms").addEventListener("click", function () { openPanel("platforms"); });
+    document.getElementById("phx-nav-member").addEventListener("click", openMemberModal);
+  }
+
+  /* 添加团队成员：写入服务器并刷新原版团队视图 */
+  function openMemberModal() {
+    if (!token()) { showGate(); return; }
+    var D = window.LH_DATA;
+    var roleOptions = [
+      ["owner", "Owner · 负责人"], ["ops", "Ops · 运营"], ["content", "Content · 内容"],
+      ["compliance", "Compliance · 合规"], ["viewer", "Viewer · 只读"],
+    ];
+    var m = openModal(
+      '<div class="modal-head"><h3>👥 添加团队成员</h3><button class="modal-close">✕</button></div>'
+      + '<div class="modal-body">'
+      + '<div class="phx-field"><label>成员姓名</label><input id="phx-m-name" placeholder="如：王小明"></div>'
+      + '<div class="phx-field"><label>角色</label><select id="phx-m-role">'
+      + roleOptions.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + "</option>"; }).join("")
+      + "</select></div>"
+      + '<div class="phx-field"><label>职位（选填）</label><input id="phx-m-title" placeholder="如：运营 / 财务 / 设计"></div>'
+      + '<div class="modal-actions"><button class="btn-primary" id="phx-m-save" style="flex:1;padding:11px;border:none;border-radius:980px;color:#fff;background:linear-gradient(135deg,#6366F1,#8B5CF6);cursor:pointer;font-size:14px;font-weight:650">添加成员</button>'
+      + '<button class="btn" id="phx-m-cancel">取消</button></div></div>'
+    );
+    $("#phx-m-cancel", m).onclick = closeModal;
+    $("#phx-m-save", m).onclick = function () {
+      var name = $("#phx-m-name", m).value.trim();
+      if (!name) { toast("请填写成员姓名", "bad"); return; }
+      var E = window.LH_ENGINE;
+      var ws = (E && E.state.ws) || "";
+      api("/api/team/members", {
+        method: "POST",
+        body: JSON.stringify({
+          ws: ws, name: name,
+          role: $("#phx-m-role", m).value,
+          title: $("#phx-m-title", m).value.trim() || "成员",
+        }),
+      }).then(function (r) {
+        var D = window.LH_DATA, UI = window.LH_UI;
+        if (D && r.member) {
+          D.members.push({
+            id: r.member.id, ws: r.member.ws, name: r.member.name,
+            role: r.member.role, title: r.member.title,
+            initial: (r.member.name || "?").slice(0, 1).toUpperCase(),
+            online: true, lastSeen: "在线", load: "",
+          });
+          if (UI.renderAll) UI.renderAll();
+        }
+        closeModal();
+        toast("已添加成员：" + name, "ok");
+      }).catch(function (e) { toast(e.message, "bad"); });
+    };
   }
 
   /* ══════════════ 5. 覆盖面板 ══════════════ */
@@ -752,9 +868,25 @@
     }, 700);
   }
 
+  function hookTeamPersist() {
+    var UI = window.LH_UI;
+    if (!UI || !UI.actions) return;
+    ["create-ws", "create-project"].forEach(function (act) {
+      if (UI.actions[act] && !UI.actions[act].__phx) {
+        var orig = UI.actions[act];
+        UI.actions[act] = function () {
+          orig();
+          persistTeam();
+        };
+        UI.actions[act].__phx = true;
+      }
+    });
+  }
+
   function boot() {
     hookCfgSave();
     watchArea();
+    hookTeamPersist();
     if (token()) {
       api("/api/auth/me").then(function (r) {
         afterAuth(r.user);
