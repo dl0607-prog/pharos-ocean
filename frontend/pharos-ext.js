@@ -988,7 +988,15 @@
 
   function watchArea() {
     setInterval(function () {
+      var UI = window.LH_UI;
       var area = currentArea();
+      if (area === "app" && UI && UI.S) {
+        /* 右侧面板常驻:任何情况下被收起(如按 Esc)都自动重新展开 */
+        if (!UI.S.railOpen) {
+          UI.S.railOpen = true;
+          if (UI.renderRail) UI.renderRail();
+        }
+      }
       if (area !== "app") return;
       if (!token()) {
         showGate();
