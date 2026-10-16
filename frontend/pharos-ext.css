@@ -57,7 +57,7 @@ body.has-sea .ws-switch .ws-plan { display: none; }            /* 工作区只�
 
 /* ══ 三栏布局均匀:左 220 / 右 280,中间内容缩窄居中,左右留出相等空隙 ══ */
 body.has-sea { --sidebar-w: 220px; --rail-w: 280px; }
-.main-inner {
+.app .main-inner {
   max-width: 860px;
   margin: 0 auto;
   padding: 24px 36px 80px;
