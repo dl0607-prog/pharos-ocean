@@ -20,6 +20,15 @@
 .rail .gate-opts { padding: 0 14px 14px; gap: 8px; }
 .rail .gate-f { padding: 10px 16px; }
 
+/* 右侧面板：去掉顶部「收起面板」按钮（顶栏「团队与决策」可开关，减少拥挤） */
+#rail > button[data-act="toggle-rail"] { display: none; }
+
+/* 「待你决策」块：头部琥珀色下划线（与设计稿一致） */
+#rail > div.rail-block:nth-of-type(2) .rail-head {
+  border-bottom: 2px solid rgba(245, 158, 11, .5);
+}
+#rail > div.rail-block:nth-of-type(2) .rail-head > span:first-child { color: var(--beacon, #B45309); }
+
 /* ══ 顶栏搜索框 / 账号区可见性（海面主题下白框浅字看不清 → 浅灰 + 深字）══ */
 body.has-sea .topbar-search {
   background: rgba(20, 32, 56, .10);
