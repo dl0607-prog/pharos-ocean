@@ -527,11 +527,11 @@
     UI.views.overview = function () {
       var html = orig.apply(this, arguments);
       var banner =
-        '<div class="next-hint" style="margin-bottom:16px;background:linear-gradient(135deg, rgba(245,158,11,.16), rgba(99,102,241,.12));border-color:rgba(245,158,11,.45)">' +
+        '<div class="next-hint" style="margin-bottom:16px;background:rgba(232,235,241,.88);border-color:rgba(20,32,56,.14);color:#14203A;box-shadow:0 10px 26px -20px rgba(20,32,56,.45)">' +
         '<span class="nh-badge" style="background:linear-gradient(135deg,#F59E0B,#F97316)">🚀 出海启动</span>' +
-        '<span class="nh-text"><b>不知道怎么出海？</b>填一份资料，AI 直接给你专属出海方案 —— 首选平台、阶段任务、预算清单，照着做就能开第一单。</span>' +
+        '<span class="nh-text" style="color:#14203A"><b style="color:#0f2035">不知道怎么出海？</b>填一份资料，AI 直接给你专属出海方案 —— 首选平台、阶段任务、预算清单，照着做就能开第一单。</span>' +
         '<button class="btn beacon" id="phx-ov-launch">开始出海 →</button>' +
-        '<button class="btn" id="phx-ov-platforms">🔗 平台对接</button>' +
+        '<button class="btn" id="phx-ov-platforms" style="background:#fff;border-color:rgba(20,32,56,.16);color:#14203A">🔗 平台对接</button>' +
         "</div>";
       return banner + html;
     };
