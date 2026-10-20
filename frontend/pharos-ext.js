@@ -352,6 +352,11 @@
     E.state.me = owner.id;
     E.state.ws = ws[0].id;
     E.state.project = projects[0].id;
+    /* 清空原版演示数据：从空白开始，随真实业务逐步出现 */
+    ["tasks", "inbox", "activities", "artifacts", "notifications"].forEach(function (k) {
+      if (Array.isArray(D[k])) D[k] = [];
+    });
+    E.state.activities = [];
     /* 清掉引用已不存在成员的演示活动（避免「Unknown」记录） */
     var ids = {};
     members.forEach(function (m) { ids[m.id] = 1; });

@@ -882,6 +882,8 @@
       '<div class="muted" style="margin:10px 0 4px"><b>入驻要求</b><br>' + (p.entry || []).map(function (e) { return "· " + esc(e); }).join("<br>") + "</div>" +
       '<div class="muted" style="margin-top:10px"><b>适合谁</b><br>' + esc(p.fit || "") + "</div>" +
       '<div class="actions"><button class="btn-gold" id="plat-save">保存进度</button></div>' +
+      '<div class="actions"><button class="btn-line" id="plat-verify" style="width:100%">验证店铺链接（真实访问）</button></div>' +
+      '<div class="tiny" id="plat-vnote" style="margin-top:8px"></div>' +
       '<div class="actions"><button class="btn-line" id="plat-guide" style="width:100%">AI 入驻指南</button></div>';
     openSheet(p.name, p.region + " · " + p.mode, html);
     var chosen = p.status || "none";
@@ -897,6 +899,15 @@
         .catch(function (e) { toast(e.message, true); });
     };
     $("#plat-guide").onclick = function () { openGuide(pid); };
+    $("#plat-verify").onclick = function () {
+      var url = $("#plat-url").value.trim();
+      var note = $("#plat-vnote");
+      if (!url) { note.textContent = "请先填写店铺链接"; return; }
+      note.textContent = "正在访问…";
+      api("/api/verify-url", { method: "POST", body: JSON.stringify({ url: url }) })
+        .then(function (r) { note.textContent = "✅ 可访问：" + (r.title || r.final_url) + "（HTTP " + r.status + "）"; })
+        .catch(function (e) { note.textContent = "❌ " + e.message; });
+    };
   }
   function openGuide(pid) {
     var p = S.platforms.filter(function (x) { return x.id === pid; })[0] || {};
