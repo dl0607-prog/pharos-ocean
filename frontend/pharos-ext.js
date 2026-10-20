@@ -620,6 +620,59 @@
         });
       }).catch(function () {});
     }
+    /* 知识库：上传 / 检索 / 删除（团队共享） */
+    if (UI.S.view === "knowledge" && !document.getElementById("phx-kb-card")) {
+      api("/api/kb").then(function (d) {
+        if (document.getElementById("phx-kb-card")) return;
+        var card = document.createElement("div");
+        card.id = "phx-kb-card";
+        card.className = "card";
+        card.style.marginBottom = "16px";
+        card.innerHTML = '<div class="card-h"><div><h3>上传知识（' + d.docs.length + '）</h3>' +
+          '<div class="sub">产品资料 / 平台规则 / 认证文件，团队共享，AI 回答时可引用</div></div></div>' +
+          '<div class="card-b">' +
+          '<div class="row wrap" style="gap:8px;margin-bottom:10px">' +
+          '<input id="phx-kb-title" placeholder="文档标题" style="padding:8px 12px;border-radius:10px;border:1px solid var(--glass-line);background:transparent;color:inherit;min-width:180px">' +
+          '<select id="phx-kb-tag" class="btn" style="padding:8px 12px"><option>品牌资产</option><option>市场知识</option><option>平台规则</option><option>认证文件</option><option>复盘</option></select>' +
+          '<button class="btn primary" id="phx-kb-add">上传/保存</button>' +
+          '<input id="phx-kb-search" placeholder="搜索知识…" style="padding:8px 12px;border-radius:10px;border:1px solid var(--glass-line);background:transparent;color:inherit">' +
+          '<button class="btn" id="phx-kb-go">搜索</button></div>' +
+          '<textarea id="phx-kb-text" placeholder="粘贴文档正文（PDF/Word 请先复制文字）" style="width:100%;min-height:90px;padding:10px 12px;border-radius:12px;border:1px solid var(--glass-line);background:transparent;color:inherit;margin-bottom:10px"></textarea>' +
+          '<div id="phx-kb-list">' + (d.docs.length ? d.docs.map(function (x) {
+            return '<div class="row" style="gap:8px;padding:8px 0;border-top:1px solid var(--hair);align-items:center">' +
+              '<span class="tag soft">' + esc(x.tag) + "</span>" +
+              '<span class="small grow">' + esc(x.title) + '</span><span class="tiny">' + x.chunks + " 段</span>" +
+              '<button class="btn xs" data-kb-del="' + x.id + '">删除</button></div>';
+          }).join("") : '<div class="empty" style="padding:14px 0"><div class="ed">还没有文档，粘贴内容后点「上传/保存」。</div></div>') + "</div></div>";
+        main.insertBefore(card, main.firstChild);
+        $("#phx-kb-add", card).onclick = function () {
+          api("/api/kb", {
+            method: "POST",
+            body: JSON.stringify({
+              title: $("#phx-kb-title", card).value.trim(),
+              tag: $("#phx-kb-tag", card).value,
+              content: $("#phx-kb-text", card).value.trim(),
+            }),
+          }).then(function () { toast("已存入知识库", "ok"); card.remove(); decorateViews(); })
+            .catch(function (e) { toast(e.message, "bad"); });
+        };
+        $("#phx-kb-go", card).onclick = function () {
+          var q = $("#phx-kb-search", card).value.trim();
+          api("/api/kb/search?q=" + encodeURIComponent(q)).then(function (r) {
+            $("#phx-kb-list", card).innerHTML = r.results.length ? r.results.map(function (x) {
+              return '<div style="padding:8px 0;border-top:1px solid var(--hair)"><b class="small">' + esc(x.title) +
+                '</b><div class="tiny" style="margin-top:4px;line-height:1.6">' + esc(x.snippet) + "</div></div>";
+            }).join("") : '<div class="tiny" style="padding:10px 0">没有匹配的知识</div>';
+          });
+        };
+        $$("[data-kb-del]", card).forEach(function (b) {
+          b.onclick = function () {
+            api("/api/kb/" + b.getAttribute("data-kb-del"), { method: "DELETE" })
+              .then(function () { card.remove(); decorateViews(); });
+          };
+        });
+      }).catch(function () {});
+    }
     if (UI.S.view === "team" && !document.getElementById("phx-team-card")) {
       var box = document.createElement("div");
       box.id = "phx-team-card";
