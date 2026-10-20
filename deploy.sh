@@ -75,7 +75,12 @@ rm -rf pharos-ocean-main
 tar xzf "$PKG"
 cd pharos-ocean-main
 # 还原数据与素材
-if [ -d "$BACKUP/data" ]; then cp -a "$BACKUP/data" ./data; echo "已恢复历史数据 data/"; fi
+if [ -d "$BACKUP/data" ]; then
+  cp -a "$BACKUP/data" ./data
+  chmod -R u+w ./data 2>/dev/null || true
+  chown -R root:root ./data 2>/dev/null || true
+  echo "已恢复历史数据 data/（并修复写权限）"
+fi
 if [ -d "$BACKUP/assets" ] && [ -d ./frontend/m/assets ]; then cp -a "$BACKUP/assets/." ./frontend/m/assets/; fi
 [ -f .env ] || cp .env.example .env
 
