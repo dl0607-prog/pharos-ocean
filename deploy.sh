@@ -40,17 +40,43 @@ python3 --version
 
 echo "==> [2/5] 下载最新版项目代码"
 mkdir -p /opt && cd /opt
-# 备份已有数据(重复部署/升级时保护对话记录与配置不丢失)
+# 备份已有数据(重复部署/升级时保护对话记录、团队与配置不丢失)
 BACKUP=/tmp/pharos-data-backup
 rm -rf "$BACKUP" && mkdir -p "$BACKUP"
 if [ -d pharos-ocean-main/data ]; then cp -a pharos-ocean-main/data "$BACKUP/"; fi
-curl -fL --retry 3 --retry-delay 2 -o pharos.tar.gz \
-  https://github.com/dl0607-prog/pharos-ocean/archive/refs/heads/main.tar.gz
+if [ -d pharos-ocean-main/frontend/m/assets ]; then cp -a pharos-ocean-main/frontend/m/assets "$BACKUP/assets" 2>/dev/null || true; fi
+
+# 国内服务器访问 GitHub 不稳定：依次尝试多个镜像，任一成功即继续
+PKG=/tmp/pharos-ocean.tar.gz
+rm -f "$PKG"
+GH_PATH="dl0607-prog/pharos-ocean/archive/refs/heads/main.tar.gz"
+MIRRORS="
+https://ghfast.top/https://github.com/$GH_PATH
+https://gh-proxy.com/https://github.com/$GH_PATH
+https://ghproxy.net/https://github.com/$GH_PATH
+https://mirror.ghproxy.com/https://github.com/$GH_PATH
+https://github.com/$GH_PATH
+"
+ok=0
+for u in $MIRRORS; do
+  echo "   尝试下载: $u"
+  if curl -fL --retry 2 --retry-delay 2 --connect-timeout 15 -m 240 -o "$PKG" "$u"; then
+    if tar tzf "$PKG" >/dev/null 2>&1; then ok=1; echo "   ✅ 下载成功"; break; fi
+  fi
+  echo "   ✗ 失败，换下一个镜像"
+done
+if [ "$ok" != "1" ]; then
+  echo "⚠️ 所有镜像都下载失败。请稍后重试，或在服务器上执行："
+  echo "   curl -fL --retry 3 -o $PKG https://ghfast.top/https://github.com/$GH_PATH"
+  exit 1
+fi
+
 rm -rf pharos-ocean-main
-tar xzf pharos.tar.gz
+tar xzf "$PKG"
 cd pharos-ocean-main
-# 还原数据
+# 还原数据与素材
 if [ -d "$BACKUP/data" ]; then cp -a "$BACKUP/data" ./data; echo "已恢复历史数据 data/"; fi
+if [ -d "$BACKUP/assets" ] && [ -d ./frontend/m/assets ]; then cp -a "$BACKUP/assets/." ./frontend/m/assets/; fi
 [ -f .env ] || cp .env.example .env
 
 echo "==> [3/5] 安装依赖(清华镜像源,约 1-2 分钟)"
