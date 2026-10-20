@@ -1,10 +1,12 @@
 """应用入口：FastAPI + 前端静态托管 + 账号/智能体/对话/出海启动/平台对接 API。"""
 import json
+import re
 from typing import Any, Dict
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import (FileResponse, HTMLResponse, RedirectResponse,
+                               StreamingResponse)
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -18,6 +20,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+MOBILE_UA = re.compile(r"iPhone|iPod|Android.*Mobile|Windows Phone|BlackBerry", re.I)
+
+
+@app.middleware("http")
+async def mobile_redirect(request: Request, call_next):
+    """手机浏览器访问首页时自动进入移动端 /m（?desktop=1 可强制桌面版）。"""
+    if request.url.path == "/" and not request.query_params.get("desktop"):
+        ua = request.headers.get("user-agent", "")
+        if MOBILE_UA.search(ua):
+            return RedirectResponse(url="/m/", status_code=307)
+    return await call_next(request)
 
 MAX_MESSAGE_CHARS = 8000
 MAX_HISTORY_MESSAGES = 24
@@ -420,6 +434,9 @@ def save_team(body: TeamBody, user: dict = Depends(auth.current_user)):
 # ── 前端静态托管 ───────────────────────────────────────────────────
 
 if config.FRONTEND_DIR.exists():
+    mobile_dir = config.FRONTEND_DIR / "m"
+    if mobile_dir.exists():
+        app.mount("/m", StaticFiles(directory=str(mobile_dir), html=True), name="mobile")
     app.mount("/assets", StaticFiles(directory=str(config.FRONTEND_DIR)), name="assets")
 
     @app.get("/")

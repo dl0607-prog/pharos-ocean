@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#06182b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>PHAROS OCEAN · 出海工作台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%93%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/m/m.css">
+</head>
+<body>
+
+<!-- ══ 01 启动页 ══ -->
+<div id="splash" class="splash">
+  <div class="splash-sky"></div>
+  <div class="splash-orb"><span>⚓</span></div>
+  <div class="splash-copy">
+    <h1>PHAROS <em>OCEAN</em></h1>
+    <p class="tag">出海 · 让世界看见你的好产品</p>
+    <p class="tag-en">Go Global · Let the World See Your Product</p>
+  </div>
+  <div class="splash-foot">
+    <p class="from">From here, to a bigger world.</p>
+    <button id="splash-go" class="btn-gold">开始探索 →</button>
+    <div class="dots"><i class="on"></i><i></i><i></i><i></i></div>
+  </div>
+</div>
+
+<!-- ══ 02 登录 ══ -->
+<div id="login" class="login hidden">
+  <div class="login-top">
+    <h2>欢迎回来</h2>
+    <p>继续你的出海计划</p>
+    <button id="login-avatar" class="avatar-btn">🧑</button>
+  </div>
+  <form id="form-login" class="auth-form">
+    <label>邮箱 / 手机号</label>
+    <input id="lg-user" autocomplete="username" placeholder="输入账号">
+    <label>密码</label>
+    <div class="pw-wrap">
+      <input id="lg-pass" type="password" autocomplete="current-password" placeholder="输入密码">
+      <button type="button" id="lg-eye" class="eye">👁</button>
+    </div>
+    <div class="row-between">
+      <label class="remember"><input type="checkbox" id="lg-remember" checked> 记住我</label>
+      <button type="button" class="link" id="lg-forgot">忘记密码?</button>
+    </div>
+    <button type="submit" class="btn-gold full">登录 →</button>
+    <p class="err" id="lg-err"></p>
+  </form>
+  <div class="or">或使用以下方式登录</div>
+  <div class="social">
+    <button data-s="google">G</button><button data-s="github">⌂</button><button data-s="apple"></button>
+  </div>
+  <p class="switch">还没有账号？<button class="link" id="to-register">立即注册</button></p>
+
+  <form id="form-register" class="auth-form hidden">
+    <label>用户名</label>
+    <input id="rg-user" autocomplete="username" placeholder="2-20 位字母、数字、下划线或中文">
+    <label>密码</label>
+    <input id="rg-pass" type="password" autocomplete="new-password" placeholder="至少 6 位">
+    <label>确认密码</label>
+    <input id="rg-pass2" type="password" autocomplete="new-password" placeholder="再输入一次">
+    <label>公司 / 团队名称（选填）</label>
+    <input id="rg-company" placeholder="用于方案定制">
+    <label class="remember"><input type="checkbox" id="rg-agree"> 同意《服务条款》：AI 输出仅供参考</label>
+    <button type="submit" class="btn-gold full">注册并进入</button>
+    <p class="err" id="rg-err"></p>
+    <p class="switch"><button type="button" class="link" id="to-login">← 返回登录</button></p>
+  </form>
+</div>
+
+<!-- ══ 主应用 ══ -->
+<div id="app" class="app hidden">
+  <header class="app-head">
+    <div class="brand-mini">⚓ <b>PHAROS</b></div>
+    <button id="bell" class="icon-btn" title="消息通知">🔔</button>
+  </header>
+
+  <main id="page" class="page"></main>
+
+  <nav class="tabbar">
+    <button class="tab on" data-tab="home"><span>🏠</span><i>首页</i></button>
+    <button class="tab" data-tab="agents"><span>✦</span><i>智能体</i></button>
+    <button class="tab" data-tab="platforms"><span>🔗</span><i>平台</i></button>
+    <button class="tab" data-tab="project"><span>▤</span><i>项目</i></button>
+    <button class="tab" data-tab="me"><span>👤</span><i>我的</i></button>
+  </nav>
+</div>
+
+<!-- 聊天全屏 -->
+<div id="chat" class="chat hidden">
+  <header class="chat-head">
+    <button id="chat-back" class="icon-btn">‹</button>
+    <div class="chat-title"><b id="chat-name">智能体</b><span id="chat-desc"></span></div>
+    <button id="chat-clear" class="icon-btn" title="清空">🗑</button>
+  </header>
+  <div id="chat-body" class="chat-body"></div>
+  <div class="chat-input">
+    <textarea id="chat-text" rows="1" placeholder="输入你的问题…"></textarea>
+    <button id="chat-send">发送</button>
+  </div>
+</div>
+
+<!-- 底部弹层 -->
+<div id="sheet-mask" class="sheet-mask"></div>
+<div id="sheet" class="sheet"></div>
+
+<div id="toast" class="toast"></div>
+<script src="/m/m.js"></script>
+</body>
+</html>
