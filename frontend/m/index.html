@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<meta name="theme-color" content="#06182b">
+<meta name="theme-color" content="#f6f2ea">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>PHAROS OCEAN · 出海工作台</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%93%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="/m/m.css">
@@ -13,17 +14,23 @@
 
 <!-- ══ 01 启动页 ══ -->
 <div id="splash" class="splash">
-  <div class="splash-sky"></div>
-  <div class="splash-orb"><span>⚓</span></div>
-  <div class="splash-copy">
-    <h1>PHAROS <em>OCEAN</em></h1>
-    <p class="tag">出海 · 让世界看见你的好产品</p>
-    <p class="tag-en">Go Global · Let the World See Your Product</p>
+  <div class="splash-top">
+    <h1>PHAROS OCEAN</h1>
+    <p>出海 · 让世界看见你的好产品</p>
+    <p class="en">Go Global · Let the World See Your Product</p>
   </div>
-  <div class="splash-foot">
-    <p class="from">From here, to a bigger world.</p>
-    <button id="splash-go" class="btn-gold">开始探索 →</button>
+  <div class="sea"></div>
+  <div class="lighthouse">
+    <div class="beam"></div>
+    <div class="lamp"></div>
+    <div class="top"></div>
+    <div class="tower"></div>
+    <div class="rocks"></div>
+  </div>
+  <div class="splash-bottom">
     <div class="dots"><i class="on"></i><i></i><i></i><i></i></div>
+    <button id="splash-go" class="btn-gold" style="width:100%">开启出海之旅 →</button>
+    <div class="brm">AI × GLOBAL × GROWTH</div>
   </div>
 </div>
 
@@ -51,7 +58,7 @@
   </form>
   <div class="or">或使用以下方式登录</div>
   <div class="social">
-    <button data-s="google">G</button><button data-s="github">⌂</button><button data-s="apple"></button>
+    <button data-s="google">G</button><button data-s="github">⌂</button><button data-s="apple">🍎</button>
   </div>
   <p class="switch">还没有账号？<button class="link" id="to-register">立即注册</button></p>
 
@@ -77,14 +84,12 @@
     <div class="brand-mini">⚓ <b>PHAROS</b></div>
     <button id="bell" class="icon-btn" title="消息通知">🔔</button>
   </header>
-
   <main id="page" class="page"></main>
-
   <nav class="tabbar">
     <button class="tab on" data-tab="home"><span>🏠</span><i>首页</i></button>
     <button class="tab" data-tab="agents"><span>✦</span><i>智能体</i></button>
-    <button class="tab" data-tab="platforms"><span>🔗</span><i>平台</i></button>
     <button class="tab" data-tab="project"><span>▤</span><i>项目</i></button>
+    <button class="tab" data-tab="platforms"><span>🔗</span><i>平台</i></button>
     <button class="tab" data-tab="me"><span>👤</span><i>我的</i></button>
   </nav>
 </div>
@@ -103,10 +108,8 @@
   </div>
 </div>
 
-<!-- 底部弹层 -->
 <div id="sheet-mask" class="sheet-mask"></div>
 <div id="sheet" class="sheet"></div>
-
 <div id="toast" class="toast"></div>
 <script src="/m/m.js"></script>
 </body>
