@@ -651,6 +651,46 @@ async def verify_url(body: UrlBody, user: dict = Depends(auth.current_user)):
         raise HTTPException(status_code=502, detail="无法访问该链接：" + str(e)[:160])
 
 
+# ── 产物库：AI 产出自动归档 + 手动保存/查看/删除 ─────────────────────
+
+class ArtifactBody(BaseModel):
+    kind: str = "doc"
+    title: str = ""
+    content: str = ""
+    source: str = ""
+    project_id: str = ""
+
+
+@app.get("/api/artifacts")
+def list_artifacts(kind: str = "", user: dict = Depends(auth.current_user)):
+    return {"artifacts": database.list_artifacts(scope(user), kind)}
+
+
+@app.get("/api/artifacts/{aid}")
+def get_artifact(aid: int, user: dict = Depends(auth.current_user)):
+    a = database.get_artifact(scope(user), aid)
+    if a is None:
+        raise HTTPException(status_code=404, detail="产物不存在")
+    return {"artifact": a}
+
+
+@app.post("/api/artifacts")
+def add_artifact(body: ArtifactBody, user: dict = Depends(auth.current_user)):
+    title = (body.title or "").strip()
+    content = body.content or ""
+    if not title or not content:
+        raise HTTPException(status_code=400, detail="标题和内容不能为空")
+    return {"artifact": database.add_artifact(scope(user), (body.kind or "doc")[:30],
+                                              title, content, body.source, body.project_id)}
+
+
+@app.delete("/api/artifacts/{aid}")
+def remove_artifact(aid: int, user: dict = Depends(auth.current_user)):
+    if not database.delete_artifact(scope(user), aid):
+        raise HTTPException(status_code=404, detail="产物不存在")
+    return {"ok": True}
+
+
 # ── 前端静态托管 ───────────────────────────────────────────────────
 
 if config.FRONTEND_DIR.exists():

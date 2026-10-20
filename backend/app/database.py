@@ -27,6 +27,62 @@ class User(Base):
     created_at: Mapped[float] = mapped_column(default=0.0)
 
 
+class Artifact(Base):
+    """产物库：AI 生成或用户保存的可复用产出（方案/文案/指南/报告）。"""
+    __tablename__ = "artifacts"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    owner_id: Mapped[int] = mapped_column(index=True)
+    kind: Mapped[str] = mapped_column(String(30), default="doc")
+    title: Mapped[str] = mapped_column(String(200), default="")
+    content: Mapped[str] = mapped_column(Text, default="")
+    source: Mapped[str] = mapped_column(String(60), default="")
+    project_id: Mapped[str] = mapped_column(String(24), default="")
+    created_at: Mapped[float] = mapped_column(default=0.0)
+
+
+def list_artifacts(owner_id: int, kind: str = "") -> List[dict]:
+    with session() as s:
+        q = s.query(Artifact).filter(Artifact.owner_id == owner_id)
+        if kind:
+            q = q.filter(Artifact.kind == kind)
+        return [{"id": a.id, "kind": a.kind, "title": a.title, "source": a.source,
+                 "project_id": a.project_id, "created_at": a.created_at,
+                 "length": len(a.content or "")}
+                for a in q.order_by(Artifact.id.desc()).limit(200).all()]
+
+
+def get_artifact(owner_id: int, aid: int) -> Optional[dict]:
+    with session() as s:
+        a = s.query(Artifact).filter(Artifact.owner_id == owner_id,
+                                     Artifact.id == aid).first()
+        if a is None:
+            return None
+        return {"id": a.id, "kind": a.kind, "title": a.title, "content": a.content,
+                "source": a.source, "project_id": a.project_id, "created_at": a.created_at}
+
+
+def add_artifact(owner_id: int, kind: str, title: str, content: str,
+                 source: str = "", project_id: str = "") -> dict:
+    with session() as s:
+        a = Artifact(owner_id=owner_id, kind=kind, title=title[:200],
+                     content=content, source=source[:60],
+                     project_id=project_id, created_at=time.time())
+        s.add(a)
+        s.flush()
+        return {"id": a.id, "kind": a.kind, "title": a.title,
+                "source": a.source, "created_at": a.created_at}
+
+
+def delete_artifact(owner_id: int, aid: int) -> bool:
+    with session() as s:
+        a = s.query(Artifact).filter(Artifact.owner_id == owner_id,
+                                     Artifact.id == aid).first()
+        if a is None:
+            return False
+        s.delete(a)
+        return True
+
+
 class TeamMembership(Base):
     """成员 → 团队所有者的归属关系（加入团队后共享同一份数据）。"""
     __tablename__ = "team_memberships"
