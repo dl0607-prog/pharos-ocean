@@ -545,15 +545,86 @@
     block.innerHTML =
       '<div class="nav-sec">出海工作台</div>' +
       '<button class="nav-i" id="phx-nav-launch"><span class="ic">🚀</span><span class="t">出海启动</span></button>' +
-      '<button class="nav-i" id="phx-nav-platforms"><span class="ic">🔗</span><span class="t">平台对接</span></button>' +
-      '<div class="nav-i" id="phx-nav-member"><span class="ic">👥</span><span class="t">团队与邀请</span></div>' +
-      '<div class="nav-i" id="phx-nav-work"><span class="ic">📥</span><span class="t">工作接入 · 今日待办</span></div>';
-    sb.insertBefore(block, sb.firstChild);   // 放在左侧栏最顶部，一眼可见
+      '<button class="nav-i" id="phx-nav-platforms"><span class="ic">🔗</span><span class="t">平台对接</span></button>';
+    sb.insertBefore(block, sb.firstChild);   // 放在左侧栏最顶部
     document.getElementById("phx-nav-launch").addEventListener("click", function () { openPanel("launch"); });
     document.getElementById("phx-nav-platforms").addEventListener("click", function () { openPanel("platforms"); });
-    document.getElementById("phx-nav-member").addEventListener("click", openMemberModal);
-    var wb = document.getElementById("phx-nav-work");
-    if (wb) wb.addEventListener("click", openWorkhub);
+  }
+
+  /* 把「邀请/加入团队」嵌进原版「团队与权限」页；把「工作接入+今日待办」嵌进「任务与审批」页 */
+  function hookTeamAndTasks() {
+    var main = document.getElementById("mainInner");
+    if (!main || main.__phxViews) return;
+    main.__phxViews = true;
+    new MutationObserver(function () { decorateViews(); }).observe(main, { childList: true });
+    decorateViews();
+  }
+
+  function decorateViews() {
+    var UI = window.LH_UI;
+    if (!UI || !UI.S) return;
+    var main = document.getElementById("mainInner");
+    if (!main) return;
+    if (UI.S.view === "team" && !document.getElementById("phx-team-card")) {
+      var box = document.createElement("div");
+      box.id = "phx-team-card";
+      box.className = "card";
+      box.style.marginBottom = "16px";
+      box.innerHTML = '<div class="card-h"><div><h3>邀请成员 · 加入团队</h3>' +
+        '<div class="sub">同一账号体系：同事先注册，再用邀请码加入，团队数据全员共享</div></div></div>' +
+        '<div class="card-b"><div class="row wrap" style="gap:8px;align-items:center">' +
+        '<button class="btn primary" id="phx-tc-invite">生成邀请码</button>' +
+        '<span id="phx-tc-out" class="tiny"></span></div>' +
+        '<div class="row wrap" style="gap:8px;align-items:center;margin-top:10px">' +
+        '<input id="phx-tc-code" placeholder="输入 6 位邀请码" style="padding:8px 12px;border-radius:10px;border:1px solid var(--glass-line);background:transparent;color:inherit;min-width:200px">' +
+        '<button class="btn" id="phx-tc-join">加入团队</button>' +
+        '<button class="btn ghost" id="phx-tc-leave">退出团队</button></div></div>';
+      main.insertBefore(box, main.firstChild);
+      $("#phx-tc-invite", box).onclick = function () {
+        api("/api/team/invite", { method: "POST", body: JSON.stringify({ role: "member" }) })
+          .then(function (r) {
+            $("#phx-tc-out", box).innerHTML = "邀请码 <b style=\"color:var(--gold,#f2b26c)\">" + esc(r.code) +
+              '</b>（7 天有效）· <a href="' + esc(location.origin + r.link_mobile) + '" target="_blank">邀请链接</a>';
+          }).catch(function (e) { toast(e.message, "bad"); });
+      };
+      $("#phx-tc-join", box).onclick = function () {
+        api("/api/team/join", { method: "POST", body: JSON.stringify({ code: $("#phx-tc-code", box).value.trim() }) })
+          .then(function (r) {
+            toast("已加入 " + (r.joined ? r.joined.owner_name : "团队") + "，数据已共享", "ok");
+            loadTeam();
+          }).catch(function (e) { toast(e.message, "bad"); });
+      };
+      $("#phx-tc-leave", box).onclick = function () {
+        api("/api/team/leave", { method: "POST", body: "{}" }).then(function () { toast("已退出团队"); loadTeam(); });
+      };
+    }
+    if (UI.S.view === "tasks" && !document.getElementById("phx-todo-card")) {
+      api("/api/workhub").then(function (d) {
+        if (document.getElementById("phx-todo-card")) return;
+        var card = document.createElement("div");
+        card.id = "phx-todo-card";
+        card.className = "card";
+        card.style.marginBottom = "16px";
+        card.innerHTML = '<div class="card-h"><div><h3>工作接入 · 今日待办（' + d.tasks.length + '）</h3>' +
+          '<div class="sub">绑定飞书/企微/邮箱后，待办汇到这里；PC 与手机同源</div></div></div>' +
+          '<div class="card-b">' +
+          '<div class="row wrap" style="gap:8px;margin-bottom:10px">' +
+          '<select id="phx-wk-prov" class="btn" style="padding:8px 12px"><option>飞书</option><option>企业微信</option><option>邮箱</option><option>亚马逊卖家后台</option><option>TikTok Shop</option></select>' +
+          '<input id="phx-wk-acc" placeholder="工作账号" style="padding:8px 12px;border-radius:10px;border:1px solid var(--glass-line);background:transparent;color:inherit">' +
+          '<button class="btn" id="phx-wk-bind">绑定</button>' +
+          '<span class="tiny">' + (d.connected ? "已绑定 " + d.bindings.map(function (b) { return b.provider; }).join("、") : "未绑定") + "</span></div>" +
+          d.tasks.map(function (t) {
+            return '<div class="row" style="gap:8px;padding:7px 0;border-top:1px solid var(--hair)">' +
+              tag(t.source, "soft") + '<span class="small">' + esc(t.title) + "</span></div>";
+          }).join("") + "</div>";
+        main.insertBefore(card, main.firstChild);
+        $("#phx-wk-bind", card).onclick = function () {
+          api("/api/workhub/bind", { method: "POST", body: JSON.stringify({ provider: $("#phx-wk-prov", card).value, account: $("#phx-wk-acc", card).value.trim() }) })
+            .then(function () { toast("已绑定", "ok"); card.remove(); decorateViews(); })
+            .catch(function (e) { toast(e.message, "bad"); });
+        };
+      }).catch(function () {});
+    }
   }
 
   /* 添加团队成员：写入服务器并刷新原版团队视图 */
@@ -1140,13 +1211,113 @@
     });
   }
 
+  /* ══════════════ PC 端「演示按钮」统一接活 ══════════════
+     原版很多按钮（创建补货单 / 登记证书 / 链接店铺…）没有任何处理，
+     这里按按钮文字识别并接到真实记录接口，保存后可查看列表。 */
+  var OPS_FORMS = {
+    replenish: {
+      label: "创建补货单", kind: "replenish",
+      fields: [["name", "商品 / SKU"], ["qty", "补货数量"], ["eta", "预计到仓日（如 2026-11-01）"]],
+      title: function (v) { return v.name + " · " + v.qty + " 件"; },
+    },
+    cert: {
+      label: "登记证书", kind: "cert",
+      fields: [["name", "证书类型（CE / FCC / FDA / 商标…）"], ["no", "证书编号"], ["expire", "到期日"]],
+      title: function (v) { return v.name + " · " + v.no; },
+    },
+    store: {
+      label: "链接店铺", kind: "store",
+      fields: [["name", "店铺名称"], ["platform", "平台（Amazon / TikTok / 独立站…）"], ["url", "店铺链接"]],
+      title: function (v) { return v.name + " · " + v.platform; },
+    },
+  };
+
+  function openOpsForm(key) {
+    if (!token()) { showGate(); return; }
+    var cfg = OPS_FORMS[key];
+    if (!cfg) return;
+    var html = '<div class="modal-head"><h3>' + esc(cfg.label) + '</h3><button class="modal-close">✕</button></div>' +
+      '<div class="modal-body">' +
+      cfg.fields.map(function (f) {
+        return '<div class="phx-field"><label>' + esc(f[1]) + '</label><input id="ops-' + f[0] + '"></div>';
+      }).join("") +
+      (key === "store" ? '<button class="btn" id="ops-verify" style="margin-bottom:10px">🔍 验证链接（真实访问）</button><div class="tiny" id="ops-vnote" style="margin-bottom:10px"></div>' : "") +
+      '<div class="modal-actions"><button class="btn primary" id="ops-save">保存</button>' +
+      '<button class="btn" id="ops-list">查看已有记录</button></div></div>';
+    var m = openModal(html);
+    var gather = function () {
+      var v = {};
+      cfg.fields.forEach(function (f) { v[f[0]] = ($("#ops-" + f[0], m).value || "").trim(); });
+      return v;
+    };
+    var vf = $("#ops-verify", m);
+    if (vf) vf.onclick = function () {
+      var url = ($("#ops-url", m).value || "").trim();
+      var note = $("#ops-vnote", m);
+      if (!url) { note.textContent = "请先填店铺链接"; return; }
+      note.textContent = "正在访问…";
+      api("/api/verify-url", { method: "POST", body: JSON.stringify({ url: url }) })
+        .then(function (r) { note.textContent = "✅ 可访问：" + (r.title || r.final_url) + "（HTTP " + r.status + "）"; })
+        .catch(function (e) { note.textContent = "❌ " + e.message; });
+    };
+    $("#ops-save", m).onclick = function () {
+      var v = gather();
+      if (!v[cfg.fields[0][0]]) { toast("请先填写" + cfg.fields[0][1], "bad"); return; }
+      api("/api/records", {
+        method: "POST",
+        body: JSON.stringify({ kind: cfg.kind, title: cfg.title(v), payload: v }),
+      }).then(function () {
+        closeModal();
+        toast(cfg.label + "已保存", "ok");
+        openRecords(cfg.kind, cfg.label);
+      }).catch(function (e) { toast(e.message, "bad"); });
+    };
+    $("#ops-list", m).onclick = function () { closeModal(); openRecords(cfg.kind, cfg.label); };
+  }
+
+  function openRecords(kind, label) {
+    api("/api/records?kind=" + encodeURIComponent(kind)).then(function (d) {
+      var body = '<div class="phx-label">' + esc(label) + " · 已有 " + d.records.length + " 条</div>" +
+        (d.records.length ? d.records.map(function (r) {
+          return '<div class="phx-plat" style="margin-bottom:8px;padding:12px 14px;display:flex;align-items:center;gap:10px">' +
+            "<b>" + esc(r.title) + '</b><span style="margin-left:auto;font-size:11px;color:var(--ink-3,#80809A)">' +
+            new Date(r.created_at * 1000).toLocaleDateString() + "</span>" +
+            '<button class="btn sm" data-del-rec="' + r.id + '">删除</button></div>';
+        }).join("") : '<div class="phx-plat" style="padding:16px">还没有记录，点上方按钮创建</div>');
+      var wrap = panelShell(label, "📋", "记录保存在服务器，团队成员共享", body);
+      $$("[data-del-rec]", wrap).forEach(function (b) {
+        b.addEventListener("click", function () {
+          api("/api/records/" + b.getAttribute("data-del-rec"), { method: "DELETE" })
+            .then(function () { closePanel(); openRecords(kind, label); });
+        });
+      });
+    }).catch(handlePanelErr);
+  }
+
+  function hookDemoButtons() {
+    document.addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest("button") : null;
+      if (!btn) return;
+      var txt = (btn.textContent || "").trim();
+      var map = { "创建补货单": "replenish", "登记证书": "cert", "链接店铺": "store", "添加店铺": "store" };
+      var key = null;
+      Object.keys(map).forEach(function (k) { if (txt.indexOf(k) >= 0) key = map[k]; });
+      if (!key) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openOpsForm(key);
+    }, true);
+  }
+
   function boot() {
     hookCfgSave();
     watchArea();
     hookTeamPersist();
     hookTeamEdit();
+    hookTeamAndTasks();
     hookOverviewCta();
     hookRailEmptyState();
+    hookDemoButtons();
     if (token()) {
       api("/api/auth/me").then(function (r) {
         afterAuth(r.user);

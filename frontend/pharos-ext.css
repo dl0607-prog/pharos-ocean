@@ -85,7 +85,10 @@ body.has-sea .sidebar { border-right: 1px solid rgba(20, 32, 56, .12); }
 
 /* 左侧栏顶部「出海工作台」入口：与上方分组隔开 */
 #phx-side-nav { margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(20,32,56,.08); }
-#phx-side-nav .nav-i { margin: 1px 0; }
+#phx-side-nav .nav-i { margin: 1px 0; display: flex; width: 100%; align-items: center; gap: 10px; cursor: pointer; }
+/* 弹窗输入框不溢出（新建工作区名称变长会挤出框） */
+.modal input, .modal select, .modal textarea { width: 100%; max-width: 100%; box-sizing: border-box; }
+.ws-switch, .ws-name { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* 团队成员行内的编辑/删除按钮 */
 [data-phx-edit] { margin-left: 2px; }

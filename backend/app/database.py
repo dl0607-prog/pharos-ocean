@@ -1,4 +1,5 @@
 """数据层：SQLAlchemy ORM，模型即表结构，读写全部走 ORM 会话（不使用原生 SQL）。"""
+import json
 import time
 import uuid
 from contextlib import contextmanager
@@ -53,6 +54,17 @@ class TeamInvite(Base):
     created_at: Mapped[float] = mapped_column(default=0.0)
     expires_at: Mapped[float] = mapped_column(default=0.0)
     used_by: Mapped[Optional[int]] = mapped_column(default=None)
+
+
+class OpsRecord(Base):
+    """通用业务记录：补货单 / 证书 / 店铺 / 其他运营单据。"""
+    __tablename__ = "ops_records"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    owner_id: Mapped[int] = mapped_column(index=True)
+    kind: Mapped[str] = mapped_column(String(20), default="")
+    title: Mapped[str] = mapped_column(String(200), default="")
+    payload_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[float] = mapped_column(default=0.0)
 
 
 class WorkBinding(Base):
@@ -304,6 +316,40 @@ def list_bindings(owner_id: int) -> List[dict]:
                 .order_by(WorkBinding.id.desc()).all())
         return [{"id": b.id, "provider": b.provider, "account": b.account,
                  "note": b.note, "created_at": b.created_at} for b in rows]
+
+
+# ── 通用业务记录（补货单 / 证书 / 店铺）────────────────────
+
+def list_records(owner_id: int, kind: str = "") -> List[dict]:
+    with session() as s:
+        q = s.query(OpsRecord).filter(OpsRecord.owner_id == owner_id)
+        if kind:
+            q = q.filter(OpsRecord.kind == kind)
+        rows = q.order_by(OpsRecord.id.desc()).limit(100).all()
+        return [{"id": r.id, "kind": r.kind, "title": r.title,
+                 "payload": json.loads(r.payload_json or "{}"),
+                 "created_at": r.created_at} for r in rows]
+
+
+def add_record(owner_id: int, kind: str, title: str, payload: dict) -> dict:
+    with session() as s:
+        r = OpsRecord(owner_id=owner_id, kind=kind, title=title,
+                      payload_json=json.dumps(payload, ensure_ascii=False),
+                      created_at=time.time())
+        s.add(r)
+        s.flush()
+        return {"id": r.id, "kind": r.kind, "title": r.title,
+                "payload": payload, "created_at": r.created_at}
+
+
+def delete_record(owner_id: int, rid: int) -> bool:
+    with session() as s:
+        r = s.query(OpsRecord).filter(OpsRecord.owner_id == owner_id,
+                                      OpsRecord.id == rid).first()
+        if r is None:
+            return False
+        s.delete(r)
+        return True
 
 
 def add_binding(owner_id: int, provider: str, account: str, note: str = "") -> dict:

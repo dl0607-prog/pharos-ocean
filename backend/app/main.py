@@ -572,6 +572,65 @@ async def verify_store(pid: str, body: VerifyBody, user: dict = Depends(auth.cur
         raise HTTPException(status_code=502, detail="无法访问该链接：" + str(e)[:160])
 
 
+# ── 通用业务记录（补货单 / 证书 / 店铺 / 其他单据）─────────────────
+
+class RecordBody(BaseModel):
+    kind: str = ""
+    title: str = ""
+    payload: dict = {}
+
+
+class UrlBody(BaseModel):
+    url: str = ""
+
+
+@app.get("/api/records")
+def list_records(kind: str = "", user: dict = Depends(auth.current_user)):
+    return {"records": database.list_records(scope(user), kind)}
+
+
+@app.post("/api/records")
+def add_record(body: RecordBody, user: dict = Depends(auth.current_user)):
+    kind = (body.kind or "").strip()
+    title = (body.title or "").strip()
+    if not kind or not title:
+        raise HTTPException(status_code=400, detail="请填写标题")
+    return {"record": database.add_record(scope(user), kind[:20], title[:200],
+                                          body.payload or {})}
+
+
+@app.delete("/api/records/{rid}")
+def remove_record(rid: int, user: dict = Depends(auth.current_user)):
+    if not database.delete_record(scope(user), rid):
+        raise HTTPException(status_code=404, detail="记录不存在")
+    return {"ok": True}
+
+
+@app.post("/api/verify-url")
+async def verify_url(body: UrlBody, user: dict = Depends(auth.current_user)):
+    """通用链接验证：真的访问一次，证明店铺/证书链接可用（拒绝内网，防 SSRF）。"""
+    url = (body.url or "").strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="请填写链接")
+    try:
+        url = config.validate_llm_base_url(url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+            resp = await client.get(url, headers={"User-Agent": "PHAROS-Verify/1.0"})
+        import re as _re
+        title = ""
+        m = _re.search(r"<title[^>]*>(.*?)</title>", resp.text[:4000], _re.I | _re.S)
+        if m:
+            title = _re.sub(r"\s+", " ", m.group(1)).strip()[:80]
+        return {"ok": resp.status_code < 400, "status": resp.status_code,
+                "title": title, "final_url": str(resp.url)}
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=502, detail="无法访问该链接：" + str(e)[:160])
+
+
 # ── 前端静态托管 ───────────────────────────────────────────────────
 
 if config.FRONTEND_DIR.exists():
