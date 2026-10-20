@@ -636,9 +636,17 @@
           '<input id="phx-wk-acc" placeholder="工作账号" style="padding:8px 12px;border-radius:10px;border:1px solid var(--glass-line);background:transparent;color:inherit">' +
           '<button class="btn" id="phx-wk-bind">绑定</button>' +
           '<span class="tiny">' + (d.connected ? "已绑定 " + d.bindings.map(function (b) { return b.provider; }).join("、") : "未绑定") + "</span></div>" +
-          d.tasks.map(function (t) {
-            return '<div class="row" style="gap:8px;padding:7px 0;border-top:1px solid var(--hair)">' +
-              tag(t.source, "soft") + '<span class="small">' + esc(t.title) + "</span></div>";
+          d.tasks.map(function (t, i) {
+            var start = i % 5, span = 2 + (i % 2);
+            return '<div style="padding:7px 0;border-top:1px solid var(--hair)">' +
+              '<div class="row" style="gap:8px;align-items:center">' + tag(t.source, "soft") +
+              '<span class="small">' + esc(t.title) + "</span></div>" +
+              '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:6px">' +
+              [0, 1, 2, 3, 4, 5, 6].map(function (c) {
+                var on = c >= start && c < start + span;
+                return '<div style="height:8px;border-radius:4px;background:' +
+                  (on ? "linear-gradient(90deg,#f6c98a,#e9bc7f)" : "rgba(20,32,56,.08)") + '"></div>';
+              }).join("") + "</div></div>";
           }).join("") + "</div>";
         main.insertBefore(card, main.firstChild);
         $("#phx-wk-bind", card).onclick = function () {
