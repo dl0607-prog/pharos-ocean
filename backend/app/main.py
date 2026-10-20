@@ -304,6 +304,14 @@ async def generate_plan(user: dict = Depends(auth.current_user)):
     if not isinstance(result, dict) or not result.get("route"):
         raise HTTPException(status_code=502, detail="AI 返回的方案格式异常，请重试")
     database.save_plan_result(scope(user), json.dumps(result, ensure_ascii=False))
+    # 产物库：出海方案自动归档
+    try:
+        route = (result.get("route") or {}).get("primary") or "出海方案"
+        database.add_artifact(scope(user), "plan", "出海方案 · " + str(route)[:40],
+                              json.dumps(result, ensure_ascii=False),
+                              "出海启动", "")
+    except Exception:
+        pass
     return {"result": result}
 
 

@@ -581,6 +581,45 @@
         }
       });
     }
+    /* 产物库：把原版演示页替换成真实产物列表 */
+    if (UI.S.view === "artifacts" && !document.getElementById("phx-art-card")) {
+      api("/api/artifacts").then(function (d) {
+        if (document.getElementById("phx-art-card")) return;
+        var card = document.createElement("div");
+        card.id = "phx-art-card";
+        card.className = "card";
+        card.style.marginBottom = "16px";
+        card.innerHTML = '<div class="card-h"><div><h3>产物库（' + d.artifacts.length + '）</h3>' +
+          '<div class="sub">AI 生成的出海方案会自动归档到这里，团队共享、可导出</div></div></div>' +
+          '<div class="card-b">' + (d.artifacts.length ? d.artifacts.map(function (a) {
+            return '<div class="row" style="gap:8px;padding:9px 0;border-top:1px solid var(--hair);align-items:center">' +
+              '<span class="tag soft">' + esc(a.kind) + "</span>" +
+              '<span class="small grow">' + esc(a.title) + "</span>" +
+              '<span class="tiny">' + new Date(a.created_at * 1000).toLocaleDateString() + "</span>" +
+              '<button class="btn xs" data-art-view="' + a.id + '">查看</button>' +
+              '<button class="btn xs" data-art-del="' + a.id + '">删除</button></div>';
+          }).join("") : '<div class="empty" style="padding:18px 0"><div class="ed">还没有产物。完成一次「出海启动」生成方案后会自动出现在这里。</div></div>') +
+          "</div>";
+        main.insertBefore(card, main.firstChild);
+        $$("[data-art-del]", card).forEach(function (b) {
+          b.onclick = function () {
+            api("/api/artifacts/" + b.getAttribute("data-art-del"), { method: "DELETE" })
+              .then(function () { card.remove(); decorateViews(); });
+          };
+        });
+        $$("[data-art-view]", card).forEach(function (b) {
+          b.onclick = function () {
+            api("/api/artifacts/" + b.getAttribute("data-art-view")).then(function (r) {
+              var a = r.artifact;
+              var m = openModal('<div class="modal-head"><h3>' + esc(a.title) + '</h3><button class="modal-close">✕</button></div>' +
+                '<div class="modal-body"><pre style="white-space:pre-wrap;font-size:12px;max-height:60vh;overflow:auto">' +
+                esc(a.content.slice(0, 20000)) + "</pre></div>");
+              $("#phx-m-cancel", m) && ($("#phx-m-cancel", m).onclick = closeModal);
+            });
+          };
+        });
+      }).catch(function () {});
+    }
     if (UI.S.view === "team" && !document.getElementById("phx-team-card")) {
       var box = document.createElement("div");
       box.id = "phx-team-card";
