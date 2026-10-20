@@ -673,6 +673,54 @@
         });
       }).catch(function () {});
     }
+    /* 财务对账：粘贴两侧流水 → 匹配 → 差异报告 */
+    if (UI.S.view === "finance" && !document.getElementById("phx-fin-card")) {
+      var fcard = document.createElement("div");
+      fcard.id = "phx-fin-card";
+      fcard.className = "card";
+      fcard.style.marginBottom = "16px";
+      fcard.innerHTML = '<div class="card-h"><div><h3>财务对账（结算单 vs 收款流水）</h3>' +
+        '<div class="sub">每行格式：订单号,金额。粘贴后点「开始对账」，自动匹配并给出差异</div></div></div>' +
+        '<div class="card-b"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+        '<textarea id="phx-fin-s" placeholder="平台结算单：&#10;A1001,299.00&#10;A1002,159.00" style="min-height:110px;padding:10px;border-radius:12px;border:1px solid var(--glass-line);background:transparent;color:inherit;font-size:12px"></textarea>' +
+        '<textarea id="phx-fin-r" placeholder="收款流水：&#10;A1001,290.00&#10;A1003,88.00" style="min-height:110px;padding:10px;border-radius:12px;border:1px solid var(--glass-line);background:transparent;color:inherit;font-size:12px"></textarea>' +
+        "</div><div class=\"row\" style=\"gap:8px;margin-top:10px\"><button class=\"btn primary\" id=\"phx-fin-go\">开始对账</button>" +
+        '<span class="tiny" id="phx-fin-sum"></span></div><div id="phx-fin-out" style="margin-top:10px"></div></div>';
+      main.insertBefore(fcard, main.firstChild);
+      $("#phx-fin-go", fcard).onclick = function () {
+        api("/api/finance/reconcile", {
+          method: "POST",
+          body: JSON.stringify({
+            settlement_csv: $("#phx-fin-s", fcard).value,
+            receipts_csv: $("#phx-fin-r", fcard).value,
+          }),
+        }).then(function (r) {
+          var s = r.summary;
+          $("#phx-fin-sum", fcard).textContent = "结算 " + s.settlement_count + " 单 / 收款 " +
+            s.receipt_count + " 笔 · 匹配 " + s.matched + " · 金额不符 " + s.mismatch +
+            " · 缺收款 " + s.missing_receipt + " · 缺结算 " + s.missing_settlement +
+            " · 差异合计 " + s.diff_total;
+          var rows = "";
+          r.mismatch.forEach(function (x) {
+            rows += '<div class="row" style="gap:8px;padding:6px 0;border-top:1px solid var(--hair)">' +
+              '<span class="tag bad">金额不符</span><span class="small mono">' + esc(x.order_id) +
+              "</span><span class=\"tiny\">结算 " + x.settlement + " / 收款 " + x.receipt +
+              ' / 差 ' + x.diff + "</span></div>";
+          });
+          r.missing_receipt.forEach(function (x) {
+            rows += '<div class="row" style="gap:8px;padding:6px 0;border-top:1px solid var(--hair)">' +
+              '<span class="tag warn">缺收款</span><span class="small mono">' + esc(x.order_id) +
+              '</span><span class="tiny">结算 ' + x.settlement + "</span></div>";
+          });
+          r.missing_settlement.forEach(function (x) {
+            rows += '<div class="row" style="gap:8px;padding:6px 0;border-top:1px solid var(--hair)">' +
+              '<span class="tag info">缺结算</span><span class="small mono">' + esc(x.order_id) +
+              '</span><span class="tiny">收款 ' + x.receipt + "</span></div>";
+          });
+          $("#phx-fin-out", fcard).innerHTML = rows || '<div class="tiny">全部匹配，无差异 ✅</div>';
+        }).catch(function (e) { toast(e.message, "bad"); });
+      };
+    }
     if (UI.S.view === "team" && !document.getElementById("phx-team-card")) {
       var box = document.createElement("div");
       box.id = "phx-team-card";

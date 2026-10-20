@@ -659,6 +659,72 @@ async def verify_url(body: UrlBody, user: dict = Depends(auth.current_user)):
         raise HTTPException(status_code=502, detail="无法访问该链接：" + str(e)[:160])
 
 
+# ── 财务对账：平台结算单 vs 收款流水 ───────────────────────────────
+
+class ReconBody(BaseModel):
+    settlement_csv: str = ""
+    receipts_csv: str = ""
+
+
+def _parse_csv_amounts(raw: str) -> dict:
+    """解析两列 CSV：订单号,金额。容忍表头、空行、￥/$ 与千分位。"""
+    import re as _re
+    out = {}
+    for line in (raw or "").replace("\r", "").split("\n"):
+        line = line.strip()
+        if not line or "," not in line:
+            continue
+        oid, amt = line.split(",", 1)
+        oid = _re.sub(r'["\s]', "", oid)
+        amt = _re.sub(r'[^\d.\-]', "", amt)
+        if not oid or not amt:
+            continue
+        try:
+            out[oid] = float(amt)
+        except ValueError:
+            continue
+    return out
+
+
+@app.post("/api/finance/reconcile")
+def reconcile(body: ReconBody, user: dict = Depends(auth.current_user)):
+    s_map = _parse_csv_amounts(body.settlement_csv)
+    r_map = _parse_csv_amounts(body.receipts_csv)
+    if not s_map and not r_map:
+        raise HTTPException(status_code=400, detail="请粘贴结算单与收款流水（每行：订单号,金额）")
+    matched, mismatch, miss_receipt, miss_settle = [], [], [], []
+    for oid, amt in s_map.items():
+        if oid in r_map:
+            diff = round(r_map[oid] - amt, 2)
+            if abs(diff) < 0.01:
+                matched.append({"order_id": oid, "amount": amt})
+            else:
+                mismatch.append({"order_id": oid, "settlement": amt,
+                                 "receipt": r_map[oid], "diff": diff})
+        else:
+            miss_receipt.append({"order_id": oid, "settlement": amt})
+    for oid, amt in r_map.items():
+        if oid not in s_map:
+            miss_settle.append({"order_id": oid, "receipt": amt})
+    total_settle = round(sum(s_map.values()), 2)
+    total_receipt = round(sum(r_map.values()), 2)
+    result = {
+        "summary": {
+            "settlement_count": len(s_map), "receipt_count": len(r_map),
+            "matched": len(matched), "mismatch": len(mismatch),
+            "missing_receipt": len(miss_receipt), "missing_settlement": len(miss_settle),
+            "settlement_total": total_settle, "receipt_total": total_receipt,
+            "diff_total": round(total_receipt - total_settle, 2),
+        },
+        "matched": matched, "mismatch": mismatch,
+        "missing_receipt": miss_receipt, "missing_settlement": miss_settle,
+    }
+    database.add_record(scope(user), "reconcile",
+                        "对账 " + str(len(s_map)) + " 单 · 差异 " + str(result["summary"]["diff_total"]),
+                        {"summary": result["summary"]})
+    return result
+
+
 # ── 知识库：上传 → 切分 → 检索 → 供 AI 引用 ───────────────────────
 
 class KbBody(BaseModel):
