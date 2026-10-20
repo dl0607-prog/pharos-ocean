@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<meta name="theme-color" content="#f6f2ea">
+<meta name="theme-color" content="#f5f2ec">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>PHAROS OCEAN · 出海工作台</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%93%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="/m/m.css">
@@ -14,32 +13,27 @@
 
 <!-- ══ 01 启动页 ══ -->
 <div id="splash" class="splash">
-  <div class="splash-top">
+  <img class="hero" src="/m/assets/hero1.jpg" alt="">
+  <div class="hero-veil"></div>
+
+  <div class="splash-copy">
     <h1>PHAROS OCEAN</h1>
-    <p>出海 · 让世界看见你的好产品</p>
-    <p class="en">Go Global · Let the World See Your Product</p>
+    <p class="tag">出海 · 让世界看见你的好产品</p>
+    <p class="tag-en">Go Global · Let the World See Your Product</p>
   </div>
-  <div class="sea"></div>
-  <div class="lighthouse">
-    <div class="beam"></div>
-    <div class="lamp"></div>
-    <div class="top"></div>
-    <div class="tower"></div>
-    <div class="rocks"></div>
-  </div>
-  <div class="splash-bottom">
+
+  <div class="splash-foot">
     <div class="dots"><i class="on"></i><i></i><i></i><i></i></div>
-    <button id="splash-go" class="btn-gold" style="width:100%">开启出海之旅 →</button>
-    <div class="brm">AI × GLOBAL × GROWTH</div>
+    <button id="splash-go" class="btn-gold">开启出海之旅 →</button>
+    <div class="brm">AI <span>×</span> GLOBAL <span>×</span> GROWTH</div>
   </div>
 </div>
 
 <!-- ══ 02 登录 ══ -->
 <div id="login" class="login hidden">
   <div class="login-top">
-    <h2>欢迎回来</h2>
-    <p>继续你的出海计划</p>
-    <button id="login-avatar" class="avatar-btn">🧑</button>
+    <div class="login-hello"><h2>欢迎回来</h2><p>继续你的出海计划</p></div>
+    <button id="login-avatar" class="avatar-btn">👤</button>
   </div>
   <form id="form-login" class="auth-form">
     <label>邮箱 / 手机号</label>
@@ -47,7 +41,7 @@
     <label>密码</label>
     <div class="pw-wrap">
       <input id="lg-pass" type="password" autocomplete="current-password" placeholder="输入密码">
-      <button type="button" id="lg-eye" class="eye">👁</button>
+      <button type="button" id="lg-eye" class="eye" aria-label="显示密码"></button>
     </div>
     <div class="row-between">
       <label class="remember"><input type="checkbox" id="lg-remember" checked> 记住我</label>
@@ -56,9 +50,11 @@
     <button type="submit" class="btn-gold full">登录 →</button>
     <p class="err" id="lg-err"></p>
   </form>
-  <div class="or">或使用以下方式登录</div>
+  <div class="or"><span>或使用以下方式登录</span></div>
   <div class="social">
-    <button data-s="google">G</button><button data-s="github">⌂</button><button data-s="apple">🍎</button>
+    <button data-s="google" aria-label="Google"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4c-.2 1.2-.9 2.2-1.9 2.9v2.5h3.1c1.8-1.7 3-4.2 3-7.2z"/><path fill="#34A853" d="M12 22c2.7 0 4.9-.9 6.6-2.4l-3.1-2.5c-.9.6-2 .9-3.5.9-2.6 0-4.8-1.8-5.6-4.1H3.2v2.6C4.9 19.8 8.2 22 12 22z"/><path fill="#FBBC05" d="M6.4 13.9c-.2-.6-.3-1.2-.3-1.9s.1-1.3.3-1.9V7.5H3.2C2.4 9 2 10.4 2 12s.4 3 1.2 4.5l3.2-2.6z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8C16.9 2.9 14.7 2 12 2 8.2 2 4.9 4.2 3.2 7.5l3.2 2.6C7.2 7.7 9.4 5.9 12 5.9z"/></svg></button>
+    <button data-s="github" aria-label="GitHub"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="#1b1f24" d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7 1 .7 2v3c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></svg></button>
+    <button data-s="apple" aria-label="Apple"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="#1b1f24" d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.7-1.8-3.3-1.8-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7 2-1.1 2.8-2.2c.9-1.3 1.3-2.5 1.3-2.6-.1 0-2.7-1-2.7-3.8zM14.3 5.9c.6-.8 1.1-1.9 1-3-1 0-2.1.6-2.8 1.4-.6.7-1.1 1.8-1 2.9 1.1.1 2.2-.6 2.8-1.3z"/></svg></button>
   </div>
   <p class="switch">还没有账号？<button class="link" id="to-register">立即注册</button></p>
 
@@ -80,31 +76,27 @@
 
 <!-- ══ 主应用 ══ -->
 <div id="app" class="app hidden">
-  <header class="app-head">
-    <div class="brand-mini">⚓ <b>PHAROS</b></div>
-    <button id="bell" class="icon-btn" title="消息通知">🔔</button>
-  </header>
   <main id="page" class="page"></main>
   <nav class="tabbar">
-    <button class="tab on" data-tab="home"><span>🏠</span><i>首页</i></button>
-    <button class="tab" data-tab="agents"><span>✦</span><i>智能体</i></button>
-    <button class="tab" data-tab="project"><span>▤</span><i>项目</i></button>
-    <button class="tab" data-tab="platforms"><span>🔗</span><i>平台</i></button>
-    <button class="tab" data-tab="me"><span>👤</span><i>我的</i></button>
+    <button class="tab on" data-tab="home"><i></i><span>首页</span></button>
+    <button class="tab" data-tab="agents"><i></i><span>智能体</span></button>
+    <button class="tab" data-tab="project"><i></i><span>项目</span></button>
+    <button class="tab" data-tab="platforms"><i></i><span>平台</span></button>
+    <button class="tab" data-tab="me"><i></i><span>我的</span></button>
   </nav>
 </div>
 
 <!-- 聊天全屏 -->
 <div id="chat" class="chat hidden">
   <header class="chat-head">
-    <button id="chat-back" class="icon-btn">‹</button>
+    <button id="chat-back" class="icon-btn back"></button>
     <div class="chat-title"><b id="chat-name">智能体</b><span id="chat-desc"></span></div>
-    <button id="chat-clear" class="icon-btn" title="清空">🗑</button>
+    <button id="chat-clear" class="icon-btn" aria-label="清空">⋯</button>
   </header>
   <div id="chat-body" class="chat-body"></div>
   <div class="chat-input">
     <textarea id="chat-text" rows="1" placeholder="输入你的问题…"></textarea>
-    <button id="chat-send">发送</button>
+    <button id="chat-send" aria-label="发送"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg></button>
   </div>
 </div>
 
