@@ -659,6 +659,62 @@ async def verify_url(body: UrlBody, user: dict = Depends(auth.current_user)):
         raise HTTPException(status_code=502, detail="无法访问该链接：" + str(e)[:160])
 
 
+# ── 知识库：上传 → 切分 → 检索 → 供 AI 引用 ───────────────────────
+
+class KbBody(BaseModel):
+    title: str = ""
+    tag: str = "其他"
+    content: str = ""
+
+
+def _chunk_text(text: str, size: int = 800) -> list:
+    text = (text or "").replace("\r\n", "\n").strip()
+    if not text:
+        return []
+    paras = [p.strip() for p in text.split("\n\n") if p.strip()]
+    chunks, buf = [], ""
+    for p in paras:
+        if len(buf) + len(p) + 2 <= size:
+            buf = (buf + "\n\n" + p).strip()
+        else:
+            if buf:
+                chunks.append(buf)
+            buf = p
+    if buf:
+        chunks.append(buf)
+    return chunks
+
+
+@app.get("/api/kb")
+def list_kb(user: dict = Depends(auth.current_user)):
+    return {"docs": database.list_kb_docs(scope(user))}
+
+
+@app.post("/api/kb")
+def add_kb(body: KbBody, user: dict = Depends(auth.current_user)):
+    title = (body.title or "").strip()
+    content = (body.content or "").strip()
+    if not title or not content:
+        raise HTTPException(status_code=400, detail="请填写标题和内容")
+    if len(content) > 500_000:
+        raise HTTPException(status_code=400, detail="文档过大（上限约 50 万字）")
+    chunks = _chunk_text(content)
+    return {"doc": database.add_kb_doc(scope(user), title, body.tag or "其他",
+                                       content, len(chunks))}
+
+
+@app.delete("/api/kb/{did}")
+def remove_kb(did: int, user: dict = Depends(auth.current_user)):
+    if not database.delete_kb_doc(scope(user), did):
+        raise HTTPException(status_code=404, detail="文档不存在")
+    return {"ok": True}
+
+
+@app.get("/api/kb/search")
+def search_kb(q: str = "", user: dict = Depends(auth.current_user)):
+    return {"results": database.search_kb(scope(user), q)}
+
+
 # ── 产物库：AI 产出自动归档 + 手动保存/查看/删除 ─────────────────────
 
 class ArtifactBody(BaseModel):

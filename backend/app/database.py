@@ -83,6 +83,64 @@ def delete_artifact(owner_id: int, aid: int) -> bool:
         return True
 
 
+class KbDoc(Base):
+    """知识库文档：团队共享的产品资料 / 平台规则 / 认证 / 复盘。"""
+    __tablename__ = "kb_docs"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    owner_id: Mapped[int] = mapped_column(index=True)
+    title: Mapped[str] = mapped_column(String(200), default="")
+    tag: Mapped[str] = mapped_column(String(40), default="")
+    content: Mapped[str] = mapped_column(Text, default="")
+    chunks: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[float] = mapped_column(default=0.0)
+
+
+def list_kb_docs(owner_id: int) -> List[dict]:
+    with session() as s:
+        rows = (s.query(KbDoc).filter(KbDoc.owner_id == owner_id)
+                .order_by(KbDoc.id.desc()).limit(200).all())
+        return [{"id": d.id, "title": d.title, "tag": d.tag, "chunks": d.chunks,
+                 "length": len(d.content or ""), "created_at": d.created_at} for d in rows]
+
+
+def add_kb_doc(owner_id: int, title: str, tag: str, content: str, chunks: int) -> dict:
+    with session() as s:
+        d = KbDoc(owner_id=owner_id, title=title[:200], tag=tag[:40],
+                  content=content, chunks=chunks, created_at=time.time())
+        s.add(d)
+        s.flush()
+        return {"id": d.id, "title": d.title, "tag": d.tag,
+                "chunks": d.chunks, "created_at": d.created_at}
+
+
+def delete_kb_doc(owner_id: int, did: int) -> bool:
+    with session() as s:
+        d = s.query(KbDoc).filter(KbDoc.owner_id == owner_id, KbDoc.id == did).first()
+        if d is None:
+            return False
+        s.delete(d)
+        return True
+
+
+def search_kb(owner_id: int, q: str) -> List[dict]:
+    """关键词检索：命中标题/标签/正文，返回带上下文的片段。"""
+    q = (q or "").strip()
+    with session() as s:
+        rows = s.query(KbDoc).filter(KbDoc.owner_id == owner_id).all()
+    out = []
+    for d in rows:
+        text = d.content or ""
+        i = text.find(q) if q else -1
+        if q and q not in (d.title or "") and q not in (d.tag or "") and i < 0:
+            continue
+        start = max(0, i - 120) if i >= 0 else 0
+        out.append({"id": d.id, "title": d.title, "tag": d.tag,
+                    "snippet": text[start:start + 400]})
+        if len(out) >= 20:
+            break
+    return out
+
+
 class TeamMembership(Base):
     """成员 → 团队所有者的归属关系（加入团队后共享同一份数据）。"""
     __tablename__ = "team_memberships"
