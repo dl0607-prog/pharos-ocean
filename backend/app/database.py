@@ -56,6 +56,34 @@ class TeamInvite(Base):
     used_by: Mapped[Optional[int]] = mapped_column(default=None)
 
 
+class ProjectMember(Base):
+    """项目成员：被邀请进项目的人才能看到该项目（团队内共享）。"""
+    __tablename__ = "project_members"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    owner_id: Mapped[int] = mapped_column(index=True)
+    project_id: Mapped[str] = mapped_column(String(24), default="")
+    username: Mapped[str] = mapped_column(String(60), default="")
+    created_at: Mapped[float] = mapped_column(default=0.0)
+
+
+def list_project_members(owner_id: int, project_id: str = "") -> List[dict]:
+    with session() as s:
+        q = s.query(ProjectMember).filter(ProjectMember.owner_id == owner_id)
+        if project_id:
+            q = q.filter(ProjectMember.project_id == project_id)
+        return [{"id": m.id, "project_id": m.project_id, "username": m.username}
+                for m in q.order_by(ProjectMember.id.desc()).all()]
+
+
+def add_project_member(owner_id: int, project_id: str, username: str) -> dict:
+    with session() as s:
+        m = ProjectMember(owner_id=owner_id, project_id=project_id,
+                          username=username, created_at=time.time())
+        s.add(m)
+        s.flush()
+        return {"id": m.id, "project_id": m.project_id, "username": m.username}
+
+
 class OpsRecord(Base):
     """通用业务记录：补货单 / 证书 / 店铺 / 其他运营单据。"""
     __tablename__ = "ops_records"

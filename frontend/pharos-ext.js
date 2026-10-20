@@ -583,7 +583,16 @@
         '<div class="row wrap" style="gap:8px;align-items:center;margin-top:10px">' +
         '<input id="phx-tc-code" placeholder="输入 6 位邀请码" style="padding:8px 12px;border-radius:10px;border:1px solid var(--glass-line);background:transparent;color:inherit;min-width:200px">' +
         '<button class="btn" id="phx-tc-join">加入团队</button>' +
-        '<button class="btn ghost" id="phx-tc-leave">退出团队</button></div></div>';
+        '<button class="btn ghost" id="phx-tc-leave">退出团队</button></div>' +
+        '<div class="row wrap" style="gap:8px;align-items:center;margin-top:10px;border-top:1px solid var(--hair);padding-top:10px">' +
+        '<span class="tiny">把同事邀请进某个项目：</span>' +
+        '<select id="phx-tc-proj" style="padding:7px 10px;border-radius:10px;border:1px solid var(--glass-line);background:transparent;color:inherit">' +
+        ((window.LH_DATA && window.LH_DATA.projects) || []).map(function (p) {
+          return '<option value="' + esc(p.id) + '">' + esc(p.name) + "</option>";
+        }).join("") + "</select>" +
+        '<input id="phx-tc-user" placeholder="同事用户名（需先注册）" style="padding:7px 10px;border-radius:10px;border:1px solid var(--glass-line);background:transparent;color:inherit">' +
+        '<button class="btn" id="phx-tc-add">邀请到项目</button>' +
+        '<span id="phx-tc-pmsg" class="tiny"></span></div></div>';
       main.insertBefore(box, main.firstChild);
       $("#phx-tc-invite", box).onclick = function () {
         api("/api/team/invite", { method: "POST", body: JSON.stringify({ role: "member" }) })
@@ -601,6 +610,15 @@
       };
       $("#phx-tc-leave", box).onclick = function () {
         api("/api/team/leave", { method: "POST", body: "{}" }).then(function () { toast("已退出团队"); loadTeam(); });
+      };
+      $("#phx-tc-add", box).onclick = function () {
+        api("/api/projects/members", {
+          method: "POST",
+          body: JSON.stringify({ project_id: $("#phx-tc-proj", box).value, username: $("#phx-tc-user", box).value.trim() }),
+        }).then(function () {
+          $("#phx-tc-pmsg", box).textContent = "✅ 已邀请，对方登录后可在项目中协作";
+          toast("已邀请到项目", "ok");
+        }).catch(function (e) { $("#phx-tc-pmsg", box).textContent = "❌ " + e.message; });
       };
     }
     if (UI.S.view === "tasks" && !document.getElementById("phx-todo-card")) {

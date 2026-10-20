@@ -572,6 +572,26 @@ async def verify_store(pid: str, body: VerifyBody, user: dict = Depends(auth.cur
         raise HTTPException(status_code=502, detail="无法访问该链接：" + str(e)[:160])
 
 
+@app.get("/api/projects/members")
+def project_members(project_id: str = "", user: dict = Depends(auth.current_user)):
+    return {"members": database.list_project_members(scope(user), project_id)}
+
+
+class ProjectInviteBody(BaseModel):
+    project_id: str = ""
+    username: str = ""
+
+
+@app.post("/api/projects/members")
+def add_project_member(body: ProjectInviteBody, user: dict = Depends(auth.current_user)):
+    name = (body.username or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="请输入要邀请的同事用户名")
+    if database.find_user(name) is None:
+        raise HTTPException(status_code=404, detail="该用户名还没注册，请先让对方注册")
+    return {"member": database.add_project_member(scope(user), body.project_id, name)}
+
+
 # ── 通用业务记录（补货单 / 证书 / 店铺 / 其他单据）─────────────────
 
 class RecordBody(BaseModel):
