@@ -264,7 +264,7 @@ def _parse_json_field(text: str) -> Any:
 
 @app.get("/api/launch/plan")
 def get_plan(user: dict = Depends(auth.current_user)):
-    plan = database.get_plan(user["id"])
+    plan = database.get_plan(scope(user))
     if plan is None:
         return {"step": 0, "answers": {}, "result": None, "first_order": False}
     return {
@@ -282,14 +282,14 @@ class PlanBody(BaseModel):
 
 @app.put("/api/launch/plan")
 def save_plan(body: PlanBody, user: dict = Depends(auth.current_user)):
-    plan = database.save_plan(user["id"], body.step,
+    plan = database.save_plan(scope(user), body.step,
                               json.dumps(body.answers, ensure_ascii=False))
     return {"step": plan["step"], "answers": body.answers}
 
 
 @app.post("/api/launch/generate")
 async def generate_plan(user: dict = Depends(auth.current_user)):
-    plan = database.get_plan(user["id"])
+    plan = database.get_plan(scope(user))
     if plan is None or not _parse_json_field(plan["answers_json"]):
         raise HTTPException(status_code=400, detail="请先完成出海资料填写，再生成方案")
     if not llm.configured():
@@ -303,7 +303,7 @@ async def generate_plan(user: dict = Depends(auth.current_user)):
         raise HTTPException(status_code=502, detail=str(e))
     if not isinstance(result, dict) or not result.get("route"):
         raise HTTPException(status_code=502, detail="AI 返回的方案格式异常，请重试")
-    database.save_plan_result(user["id"], json.dumps(result, ensure_ascii=False))
+    database.save_plan_result(scope(user), json.dumps(result, ensure_ascii=False))
     return {"result": result}
 
 
@@ -313,7 +313,7 @@ class FirstOrderBody(BaseModel):
 
 @app.post("/api/launch/first-order")
 def first_order(body: FirstOrderBody, user: dict = Depends(auth.current_user)):
-    plan = database.set_first_order(user["id"], body.done)
+    plan = database.set_first_order(scope(user), body.done)
     if plan is None:
         raise HTTPException(status_code=404, detail="尚未创建出海计划")
     return {"first_order": plan["first_order"]}
@@ -323,10 +323,12 @@ def first_order(body: FirstOrderBody, user: dict = Depends(auth.current_user)):
 
 @app.get("/api/launch/platforms")
 def list_platforms(user: dict = Depends(auth.current_user)):
-    links = {l["platform_id"]: l for l in database.list_links(user["id"])}
+    links = {l["platform_id"]: l for l in database.list_links(scope(user))}
+    verifies = database.link_verify_map(scope(user))
     merged = []
     for p in platforms.PLATFORMS:
         link = links.get(p["id"], {})
+        ver = verifies.get(p["id"], {})
         merged.append({
             "id": p["id"], "name": p["name"], "ico": p["ico"],
             "region": p["region"], "mode": p["mode"], "fees": p["fees"],
@@ -334,6 +336,8 @@ def list_platforms(user: dict = Depends(auth.current_user)):
             "status": link.get("status", "none"),
             "store_url": link.get("store_url", ""),
             "notes": link.get("notes", ""),
+            "verified": ver.get("verified", False),
+            "verify_note": ver.get("note", ""),
             "updated_at": link.get("updated_at", 0),
         })
     return {"platforms": merged, "status_labels": platforms.PLATFORM_STATUS}
@@ -350,7 +354,7 @@ def save_link(pid: str, body: LinkBody, user: dict = Depends(auth.current_user))
     if pid not in platforms.PLATFORMS_BY_ID:
         raise HTTPException(status_code=404, detail="平台不存在")
     status = body.status if body.status in platforms.PLATFORM_STATUS else "none"
-    link = database.save_link(user["id"], pid, status,
+    link = database.save_link(scope(user), pid, status,
                               (body.store_url or "").strip()[:300],
                               (body.notes or "").strip()[:2000])
     return link
@@ -363,7 +367,7 @@ async def platform_guide(pid: str, user: dict = Depends(auth.current_user)):
         raise HTTPException(status_code=404, detail="平台不存在")
     if not llm.configured():
         raise HTTPException(status_code=400, detail="尚未配置 AI 服务：请点击右上角 ⚙ 按钮，粘贴你的 API Key")
-    plan = database.get_plan(user["id"])
+    plan = database.get_plan(scope(user))
     answers = _parse_json_field(plan["answers_json"]) if plan else {}
     try:
         result = await llm.chat_json(agents.build_guide_messages(platform, answers), max_tokens=5000)
@@ -378,6 +382,11 @@ async def platform_guide(pid: str, user: dict = Depends(auth.current_user)):
 
 # ── 团队 / 工作区 / 项目（原版团队视图的真实后端）────────────────────
 
+def scope(user: dict) -> int:
+    """团队数据域：加入团队后，读写都落在团队所有者名下（成员共享同一份数据）。"""
+    return database.team_scope(user["id"])
+
+
 class MemberBody(BaseModel):
     ws: str = ""
     name: str = ""
@@ -391,9 +400,55 @@ class TeamBody(BaseModel):
     projects: list = []
 
 
+class InviteBody(BaseModel):
+    role: str = "member"
+
+
+class JoinBody(BaseModel):
+    code: str = ""
+
+
+class BindingBody(BaseModel):
+    provider: str = ""
+    account: str = ""
+    note: str = ""
+
+
 @app.get("/api/team")
 def get_team(user: dict = Depends(auth.current_user)):
-    return database.seed_team(user["id"], user.get("company") or "", user["username"])
+    team = database.seed_team(scope(user), user.get("company") or "", user["username"])
+    team["me_role"] = database.team_role(user["id"])
+    team["me_username"] = user["username"]
+    team["team_owner_id"] = scope(user)
+    return team
+
+
+@app.post("/api/team/invite")
+def create_invite(body: InviteBody, user: dict = Depends(auth.current_user)):
+    if database.team_role(user["id"]) != "owner":
+        raise HTTPException(status_code=403, detail="只有团队负责人可以邀请成员")
+    inv = database.create_invite(scope(user), body.role)
+    inv["link_mobile"] = "/m/?join=" + inv["code"]
+    inv["link_pc"] = "/?join=" + inv["code"]
+    return inv
+
+
+@app.post("/api/team/join")
+def join_team(body: JoinBody, user: dict = Depends(auth.current_user)):
+    try:
+        info = database.join_by_invite(user["id"], body.code)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    # 加入团队后，本次会话直接返回团队数据
+    team = database.seed_team(scope(user), user.get("company") or "", user["username"])
+    team["joined"] = info
+    return team
+
+
+@app.post("/api/team/leave")
+def leave_team(user: dict = Depends(auth.current_user)):
+    database.leave_team(user["id"])
+    return {"ok": True}
 
 
 @app.post("/api/team/members")
@@ -401,9 +456,9 @@ def add_member(body: MemberBody, user: dict = Depends(auth.current_user)):
     name = (body.name or "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="成员姓名不能为空")
-    team = database.get_team(user["id"])
+    team = database.get_team(scope(user))
     ws = body.ws or (team["workspaces"][0]["id"] if team["workspaces"] else "")
-    member = database.add_member(user["id"], ws, name[:60],
+    member = database.add_member(scope(user), ws, name[:60],
                                  (body.role or "member")[:20],
                                  (body.title or "成员")[:60])
     return {"member": member}
@@ -411,7 +466,7 @@ def add_member(body: MemberBody, user: dict = Depends(auth.current_user)):
 
 @app.put("/api/team/members/{mid}")
 def update_member(mid: str, body: MemberBody, user: dict = Depends(auth.current_user)):
-    member = database.update_member(user["id"], mid, (body.name or "").strip()[:60],
+    member = database.update_member(scope(user), mid, (body.name or "").strip()[:60],
                                     (body.role or "")[:20], (body.title or "").strip()[:60])
     if member is None:
         raise HTTPException(status_code=404, detail="成员不存在")
@@ -420,14 +475,101 @@ def update_member(mid: str, body: MemberBody, user: dict = Depends(auth.current_
 
 @app.delete("/api/team/members/{mid}")
 def remove_member(mid: str, user: dict = Depends(auth.current_user)):
-    if not database.delete_member(user["id"], mid):
+    if database.team_role(user["id"]) != "owner":
+        raise HTTPException(status_code=403, detail="只有团队负责人可以移除成员")
+    if not database.delete_member(scope(user), mid):
         raise HTTPException(status_code=404, detail="成员不存在")
     return {"ok": True}
 
 
 @app.put("/api/team")
 def save_team(body: TeamBody, user: dict = Depends(auth.current_user)):
-    return database.replace_team(user["id"], body.workspaces, body.members, body.projects)
+    return database.replace_team(scope(user), body.workspaces, body.members, body.projects)
+
+
+# ── 工作接入：绑定飞书 / 企微 / 邮箱 / 平台账号 → 每日待办 ──────────
+
+@app.get("/api/workhub")
+def workhub(user: dict = Depends(auth.current_user)):
+    sc = scope(user)
+    bindings = database.list_bindings(sc)
+    plan = database.get_plan(sc)
+    links = {l["platform_id"]: l for l in database.list_links(sc)}
+    tasks = []
+    # 由真实业务数据推导待办（不伪造外部消息）
+    for pid, info in [(p["id"], p) for p in platforms.PLATFORMS]:
+        st = (links.get(pid) or {}).get("status", "none")
+        if st in ("none", "preparing"):
+            tasks.append({"source": "平台对接", "title": "完成 " + info["name"] + " 入驻资料",
+                          "detail": info["entry"][0] if info.get("entry") else "",
+                          "priority": "high" if st == "none" else "mid"})
+    if plan and plan.get("answers_json") and plan["answers_json"] != "{}":
+        result = plan.get("result_json") or ""
+        if not result:
+            tasks.append({"source": "出海计划", "title": "生成出海方案（资料已填写）",
+                          "detail": "资料已就绪，点生成即可得到平台选择与预算", "priority": "high"})
+    if plan and plan.get("first_order") == 0 and plan.get("result_json"):
+        tasks.append({"source": "里程碑", "title": "推进到首次出单",
+                      "detail": "按方案完成阶段任务，出单后标记里程碑", "priority": "mid"})
+    for b in bindings:
+        tasks.append({"source": "工作接入 · " + b["provider"], "title": "查看 " + b["account"] + " 的消息",
+                      "detail": "已绑定账号；外部消息同步需在服务商侧授权后接入", "priority": "low"})
+    return {"bindings": bindings, "tasks": tasks, "connected": len(bindings) > 0}
+
+
+@app.post("/api/workhub/bind")
+def bind_work(body: BindingBody, user: dict = Depends(auth.current_user)):
+    provider = (body.provider or "").strip()
+    account = (body.account or "").strip()
+    if not provider or not account:
+        raise HTTPException(status_code=400, detail="请填写渠道与账号")
+    return {"binding": database.add_binding(scope(user), provider[:30], account[:120],
+                                            (body.note or "").strip()[:200])}
+
+
+@app.delete("/api/workhub/bind/{bid}")
+def unbind_work(bid: int, user: dict = Depends(auth.current_user)):
+    if not database.delete_binding(scope(user), bid):
+        raise HTTPException(status_code=404, detail="绑定不存在")
+    return {"ok": True}
+
+
+# ── 平台店铺链接验证（真的去访问一次，证明链接可用）────────────────
+
+class VerifyBody(BaseModel):
+    store_url: str = ""
+
+
+@app.post("/api/launch/platforms/{pid}/verify")
+async def verify_store(pid: str, body: VerifyBody, user: dict = Depends(auth.current_user)):
+    if pid not in platforms.PLATFORMS_BY_ID:
+        raise HTTPException(status_code=404, detail="平台不存在")
+    url = (body.store_url or "").strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="请先填写店铺链接")
+    try:
+        url = config.validate_llm_base_url(url)   # http/https + 拒绝环回/私网（防 SSRF）
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+            resp = await client.get(url, headers={"User-Agent": "PHAROS-Verify/1.0"})
+        title = ""
+        text = resp.text[:4000]
+        if "<title" in text.lower():
+            import re as _re
+            m = _re.search(r"<title[^>]*>(.*?)</title>", text, _re.I | _re.S)
+            if m:
+                title = _re.sub(r"\s+", " ", m.group(1)).strip()[:80]
+        ok = resp.status_code < 400
+        note = f"HTTP {resp.status_code}" + ((" · " + title) if title else "")
+        database.save_link_verify(scope(user), pid, ok, note)
+        return {"ok": ok, "status": resp.status_code, "title": title,
+                "final_url": str(resp.url), "note": note}
+    except httpx.RequestError as e:
+        database.save_link_verify(scope(user), pid, False, "无法访问：" + str(e)[:120])
+        raise HTTPException(status_code=502, detail="无法访问该链接：" + str(e)[:160])
 
 
 # ── 前端静态托管 ───────────────────────────────────────────────────

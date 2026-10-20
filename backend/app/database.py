@@ -26,6 +26,45 @@ class User(Base):
     created_at: Mapped[float] = mapped_column(default=0.0)
 
 
+class TeamMembership(Base):
+    """成员 → 团队所有者的归属关系（加入团队后共享同一份数据）。"""
+    __tablename__ = "team_memberships"
+    user_id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(index=True)
+    role: Mapped[str] = mapped_column(String(20), default="member")
+    joined_at: Mapped[float] = mapped_column(default=0.0)
+
+
+class PlatformVerify(Base):
+    __tablename__ = "platform_verify"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    owner_id: Mapped[int] = mapped_column(index=True)
+    platform_id: Mapped[str] = mapped_column(String(40), default="")
+    verified: Mapped[int] = mapped_column(default=0)
+    note: Mapped[str] = mapped_column(String(300), default="")
+    verified_at: Mapped[float] = mapped_column(default=0.0)
+
+
+class TeamInvite(Base):
+    __tablename__ = "team_invites"
+    code: Mapped[str] = mapped_column(String(12), primary_key=True)
+    owner_id: Mapped[int] = mapped_column(index=True)
+    role: Mapped[str] = mapped_column(String(20), default="member")
+    created_at: Mapped[float] = mapped_column(default=0.0)
+    expires_at: Mapped[float] = mapped_column(default=0.0)
+    used_by: Mapped[Optional[int]] = mapped_column(default=None)
+
+
+class WorkBinding(Base):
+    __tablename__ = "work_bindings"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    owner_id: Mapped[int] = mapped_column(index=True)
+    provider: Mapped[str] = mapped_column(String(30), default="")
+    account: Mapped[str] = mapped_column(String(120), default="")
+    note: Mapped[str] = mapped_column(String(200), default="")
+    created_at: Mapped[float] = mapped_column(default=0.0)
+
+
 class AuthToken(Base):
     __tablename__ = "auth_tokens"
     token: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -188,6 +227,124 @@ def set_onboarded(user_id: int) -> None:
 def _user_dict(u: User) -> dict:
     return {"id": u.id, "username": u.username, "company": u.company,
             "onboarded": bool(u.onboarded), "created_at": u.created_at}
+
+
+def team_scope(user_id: int) -> int:
+    """当前账号的数据归属：加入团队后，读写都落在团队所有者名下（共享）。"""
+    with session() as s:
+        m = s.get(TeamMembership, user_id)
+        return m.owner_id if m is not None else user_id
+
+
+def team_role(user_id: int) -> str:
+    with session() as s:
+        m = s.get(TeamMembership, user_id)
+        return (m.role if m is not None else "owner") or "member"
+
+
+# ── 团队邀请 ─────────────────────────────────────────────
+
+def create_invite(owner_id: int, role: str, ttl_days: int = 7) -> dict:
+    import secrets as _secrets
+    code = _secrets.token_hex(3).upper()
+    now = time.time()
+    with session() as s:
+        s.add(TeamInvite(code=code, owner_id=owner_id, role=role or "member",
+                         created_at=now, expires_at=now + ttl_days * 86400))
+    return {"code": code, "expires_at": now + ttl_days * 86400, "role": role or "member"}
+
+
+def join_by_invite(user_id: int, code: str) -> dict:
+    code = (code or "").strip().upper()
+    with session() as s:
+        inv = s.get(TeamInvite, code)
+        if inv is None:
+            raise ValueError("邀请码不存在")
+        if inv.expires_at < time.time():
+            raise ValueError("邀请码已过期，请让团队负责人重新生成")
+        if inv.owner_id == user_id:
+            raise ValueError("不能加入自己创建的团队")
+        u = s.get(User, user_id)
+        owner = s.get(User, inv.owner_id)
+        if u is None or owner is None:
+            raise ValueError("邀请码无效")
+        m = s.get(TeamMembership, user_id)
+        if m is None:
+            s.add(TeamMembership(user_id=user_id, owner_id=inv.owner_id,
+                                 role=inv.role or "member", joined_at=time.time()))
+        else:
+            m.owner_id = inv.owner_id
+            m.role = inv.role or "member"
+        inv.used_by = user_id
+        exists = (s.query(Member)
+                  .filter(Member.user_id == inv.owner_id, Member.name == u.username)
+                  .first())
+        if exists is None:
+            team = s.query(Workspace).filter(Workspace.user_id == inv.owner_id).first()
+            s.add(Member(id=uuid.uuid4().hex[:12], user_id=inv.owner_id,
+                         ws=team.id if team else "", name=u.username,
+                         role=inv.role or "member", title=inv.role or "member"))
+        return {"owner_name": owner.username, "company": owner.company,
+                "role": inv.role or "member", "code": code}
+
+
+def leave_team(user_id: int) -> None:
+    with session() as s:
+        m = s.get(TeamMembership, user_id)
+        if m is not None:
+            s.delete(m)
+
+
+# ── 工作接入（飞书/企微/邮箱/平台账号绑定）─────────────────
+
+def list_bindings(owner_id: int) -> List[dict]:
+    with session() as s:
+        rows = (s.query(WorkBinding)
+                .filter(WorkBinding.owner_id == owner_id)
+                .order_by(WorkBinding.id.desc()).all())
+        return [{"id": b.id, "provider": b.provider, "account": b.account,
+                 "note": b.note, "created_at": b.created_at} for b in rows]
+
+
+def add_binding(owner_id: int, provider: str, account: str, note: str = "") -> dict:
+    with session() as s:
+        b = WorkBinding(owner_id=owner_id, provider=provider, account=account,
+                        note=note, created_at=time.time())
+        s.add(b)
+        s.flush()
+        return {"id": b.id, "provider": b.provider, "account": b.account,
+                "note": b.note, "created_at": b.created_at}
+
+
+def delete_binding(owner_id: int, bid: int) -> bool:
+    with session() as s:
+        b = s.query(WorkBinding).filter(WorkBinding.owner_id == owner_id,
+                                        WorkBinding.id == bid).first()
+        if b is None:
+            return False
+        s.delete(b)
+        return True
+
+
+def save_link_verify(owner_id: int, platform_id: str, verified: bool, note: str) -> None:
+    with session() as s:
+        v = (s.query(PlatformVerify)
+             .filter(PlatformVerify.owner_id == owner_id,
+                     PlatformVerify.platform_id == platform_id).first())
+        if v is None:
+            v = PlatformVerify(owner_id=owner_id, platform_id=platform_id)
+            s.add(v)
+        v.verified = 1 if verified else 0
+        v.note = (note or "")[:300]
+        v.verified_at = time.time()
+
+
+def link_verify_map(owner_id: int) -> dict:
+    with session() as s:
+        rows = (s.query(PlatformVerify)
+                .filter(PlatformVerify.owner_id == owner_id).all())
+        return {r.platform_id: {"verified": bool(r.verified), "note": r.note,
+                                "verified_at": r.verified_at} for r in rows}
 
 
 # ── 对话与消息（按用户隔离）──────────────────────────────────
@@ -377,8 +534,12 @@ def get_team(user_id: int) -> dict:
 
 
 def seed_team(user_id: int, company: str, username: str) -> dict:
-    """首次访问：为用户建默认团队（工作区 + 本人为 owner + 第一个项目）。"""
+    """首次访问：为该数据域创建默认团队；名称一律取“团队所有者”的公司与用户名。"""
     with session() as s:
+        owner = s.get(User, user_id)
+        if owner is not None:
+            company = owner.company or company
+            username = owner.username or username
         exists = s.query(Workspace).filter(Workspace.user_id == user_id).first()
         if exists is not None:
             return get_team(user_id)

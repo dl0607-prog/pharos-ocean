@@ -546,14 +546,59 @@
       '<div class="nav-sec">出海工作台</div>' +
       '<button class="nav-i" id="phx-nav-launch"><span class="ic">🚀</span><span class="t">出海启动</span></button>' +
       '<button class="nav-i" id="phx-nav-platforms"><span class="ic">🔗</span><span class="t">平台对接</span></button>' +
-      '<button class="nav-i" id="phx-nav-member"><span class="ic">👥</span><span class="t">添加成员</span></button>';
+      '<div class="nav-i" id="phx-nav-member"><span class="ic">👥</span><span class="t">团队与邀请</span></div>' +
+      '<div class="nav-i" id="phx-nav-work"><span class="ic">📥</span><span class="t">工作接入 · 今日待办</span></div>';
     sb.insertBefore(block, sb.firstChild);   // 放在左侧栏最顶部，一眼可见
     document.getElementById("phx-nav-launch").addEventListener("click", function () { openPanel("launch"); });
     document.getElementById("phx-nav-platforms").addEventListener("click", function () { openPanel("platforms"); });
     document.getElementById("phx-nav-member").addEventListener("click", openMemberModal);
+    var wb = document.getElementById("phx-nav-work");
+    if (wb) wb.addEventListener("click", openWorkhub);
   }
 
   /* 添加团队成员：写入服务器并刷新原版团队视图 */
+  /* 工作接入：绑定飞书/企微/邮箱，生成今日待办（由真实业务数据推导） */
+  function openWorkhub() {
+    if (!token()) { showGate(); return; }
+    api("/api/workhub").then(function (d) {
+      var body = "";
+      if (!d.bindings.length) {
+        body += '<div class="phx-label">还没有绑定工作账号</div>';
+      } else {
+        body += '<div class="phx-label">已绑定</div>' + d.bindings.map(function (b) {
+          return '<div class="phx-plat" style="margin-bottom:8px;padding:12px 14px">' +
+            "<b>" + esc(b.provider) + "</b> · " + esc(b.account) +
+            ' <button class="btn sm" data-unbind="' + b.id + '" style="float:right">解绑</button></div>';
+        }).join("");
+      }
+      body += '<div class="phx-label" style="margin-top:14px">绑定新的工作账号</div>' +
+        '<div class="phx-field"><select id="wh-provider"><option>飞书</option><option>企业微信</option><option>邮箱</option><option>亚马逊卖家后台</option><option>TikTok Shop</option></select></div>' +
+        '<div class="phx-field"><input id="wh-account" placeholder="账号，如 ops@company.com"></div>' +
+        '<button class="btn primary" id="wh-bind" style="margin-bottom:16px">绑定</button>' +
+        '<div class="phx-label">今日待办（' + d.tasks.length + "）</div>" +
+        d.tasks.map(function (t) {
+          return '<div class="phx-plat" style="margin-bottom:8px;padding:12px 14px;display:block">' +
+            '<span class="tag" style="margin-right:8px">' + esc(t.source) + "</span>" +
+            "<b>" + esc(t.title) + "</b><div class=\"tiny\" style=\"margin-top:4px;color:var(--ink-3,#80809A)\">" +
+            esc(t.detail || "") + "</div></div>";
+        }).join("");
+      var wrap = panelShell("工作接入 · 今日待办", "📥", "绑定工作账号后，每日待办会汇到这里（外部消息需服务商授权后同步）", body);
+      $("#wh-bind", wrap).addEventListener("click", function () {
+        api("/api/workhub/bind", {
+          method: "POST",
+          body: JSON.stringify({ provider: $("#wh-provider", wrap).value, account: $("#wh-account", wrap).value.trim() }),
+        }).then(function () { closePanel(); openWorkhub(); toast("已绑定", "ok"); })
+          .catch(function (e) { toast(e.message, "bad"); });
+      });
+      $$("[data-unbind]", wrap).forEach(function (b) {
+        b.addEventListener("click", function () {
+          api("/api/workhub/bind/" + b.getAttribute("data-unbind"), { method: "DELETE" })
+            .then(function () { closePanel(); openWorkhub(); });
+        });
+      });
+    }).catch(handlePanelErr);
+  }
+
   function openMemberModal() {
     if (!token()) { showGate(); return; }
     var D = window.LH_DATA;
@@ -562,8 +607,14 @@
       ["compliance", "Compliance · 合规"], ["viewer", "Viewer · 只读"],
     ];
     var m = openModal(
-      '<div class="modal-head"><h3>👥 添加团队成员</h3><button class="modal-close">✕</button></div>'
+      '<div class="modal-head"><h3>👥 团队与邀请</h3><button class="modal-close">✕</button></div>'
       + '<div class="modal-body">'
+      + '<div class="phx-field"><label>邀请同事加入团队</label>'
+      + '<div style="display:flex;gap:8px;align-items:center"><button class="btn sm primary" id="phx-make-invite">生成邀请码</button>'
+      + '<span id="phx-invite-out" style="font-size:12px;color:var(--ink-3,#80809A)"></span></div></div>'
+      + '<div class="phx-field"><label>已有邀请码？加入团队</label>'
+      + '<div style="display:flex;gap:8px"><input id="phx-join-code" placeholder="6 位邀请码" style="flex:1">'
+      + '<button class="btn sm" id="phx-join-btn">加入</button></div></div>'
       + '<div class="phx-field"><label>成员姓名</label><input id="phx-m-name" placeholder="如：王小明"></div>'
       + '<div class="phx-field"><label>角色</label><select id="phx-m-role">'
       + roleOptions.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + "</option>"; }).join("")
@@ -573,6 +624,25 @@
       + '<button class="btn" id="phx-m-cancel">取消</button></div></div>'
     );
     $("#phx-m-cancel", m).onclick = closeModal;
+    var mk = $("#phx-make-invite", m);
+    if (mk) mk.onclick = function () {
+      api("/api/team/invite", { method: "POST", body: JSON.stringify({ role: "member" }) })
+        .then(function (r) {
+          var link = location.origin + r.link_mobile;
+          $("#phx-invite-out", m).innerHTML = "邀请码 <b style=\"color:var(--gold,#f2b26c)\">" + esc(r.code) +
+            '</b> · <a href="' + esc(link) + '" target="_blank">打开邀请链接</a>';
+          toast("邀请码：" + r.code + "（7 天有效）", "ok");
+        }).catch(function (e) { toast(e.message, "bad"); });
+    };
+    var jb = $("#phx-join-btn", m);
+    if (jb) jb.onclick = function () {
+      api("/api/team/join", { method: "POST", body: JSON.stringify({ code: $("#phx-join-code", m).value.trim() }) })
+        .then(function (r) {
+          toast("已加入 " + (r.joined ? r.joined.owner_name : "团队") + " 的团队，数据已共享", "ok");
+          closeModal();
+          loadTeam();
+        }).catch(function (e) { toast(e.message, "bad"); });
+    };
     $("#phx-m-save", m).onclick = function () {
       var name = $("#phx-m-name", m).value.trim();
       if (!name) { toast("请填写成员姓名", "bad"); return; }
@@ -932,10 +1002,13 @@
           '<div class="phx-status">' + Object.keys(STATUS_LABELS).map(function (s) {
             return '<button type="button" class="st' + (status === s ? " on" : "") + '" data-s="' + s + '">' + STATUS_LABELS[s] + "</button>";
           }).join("") + "</div>" +
-          (p.store_url ? '<div style="font-size:11.5px;color:var(--ink-3,#80809A);margin-bottom:10px">🔗 ' + esc(p.store_url) + "</div>" : "") +
+          '<div class="phx-field" style="margin-bottom:8px"><input class="phx-url" placeholder="店铺链接，如 https://www.amazon.com/shops/你的店" value="' + esc(p.store_url || "") + '"></div>' +
+          '<div class="phx-verify-note" style="font-size:11px;color:var(--ink-3,#80809A);margin-bottom:8px">' +
+          (p.verified ? "✅ 已验证：" + esc(p.verify_note || "") : "未验证：填好链接后点「验证链接」，系统会真的访问一次") + "</div>" +
           '<div class="ops">' +
-          '<button type="button" class="btn sm phx-guide">🤖 AI 入驻指南</button>' +
-          '<button type="button" class="btn sm primary phx-save">保存进度</button>' +
+          '<button type="button" class="btn sm phx-verify">🔍 验证链接</button>' +
+          '<button type="button" class="btn sm phx-guide">AI 入驻指南</button>' +
+          '<button type="button" class="btn sm primary phx-save">保存</button>' +
           "</div></div>";
       }).join("") + "</div>";
 
@@ -953,10 +1026,29 @@
         if (!on) { toast("请先选择对接进度", "bad"); return; }
         api("/api/launch/platforms/" + pid, {
           method: "PUT",
-          body: JSON.stringify({ status: on.getAttribute("data-s") }),
+          body: JSON.stringify({
+            status: on.getAttribute("data-s"),
+            store_url: $(".phx-url", card).value.trim(),
+          }),
         }).then(function () {
-          toast("对接进度已保存", "ok");
+          toast("已保存（进度 + 店铺链接）", "ok");
         }).catch(handlePanelErr);
+      });
+      $(".phx-verify", card).addEventListener("click", function () {
+        var url = $(".phx-url", card).value.trim();
+        if (!url) { toast("请先填写店铺链接", "bad"); return; }
+        var note = $(".phx-verify-note", card);
+        note.textContent = "正在访问该链接…";
+        api("/api/launch/platforms/" + pid + "/verify", {
+          method: "POST",
+          body: JSON.stringify({ store_url: url }),
+        }).then(function (r) {
+          note.textContent = "✅ 已验证：" + (r.title || "页面可访问") + "（HTTP " + r.status + "）";
+          toast("链接验证通过，店铺确实存在", "ok");
+        }).catch(function (e) {
+          note.textContent = "❌ 验证失败：" + e.message;
+          toast(e.message, "bad");
+        });
       });
       $(".phx-guide", card).addEventListener("click", function () { openGuide(pid, card); });
     });

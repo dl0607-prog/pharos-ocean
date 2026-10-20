@@ -593,6 +593,8 @@
       '<span class="tag warn" style="margin-left:auto">专业版</span></div>' +
 
       '<div class="menu" style="margin-bottom:14px">' +
+      '<button data-team><span class="mi">' + IC.user + "</span>团队与邀请" + '<span class="ar">' + IC.chev + "</span></button>" +
+      '<button data-todo><span class="mi">' + IC.grid + "</span>今日待办" + '<span class="ar">' + IC.chev + "</span></button>" +
       '<button data-go="project"><span class="mi">' + IC.grid + "</span>我的项目" + '<span class="ar">' + IC.chev + "</span></button>" +
       '<button data-ai-settings><span class="mi">' + IC.gear + "</span>AI 服务配置" + '<span class="val" id="ai-state">检查中…</span></button>' +
       '<button data-notices><span class="mi">' + IC.bell + "</span>通知设置" + '<span class="val">' + (notifCount()) + " 条</span></button>" +
@@ -664,8 +666,12 @@
     });
     var ow = $("[data-open-wiz]", p);
     if (ow) ow.onclick = openPlanSheet;
-    var mo = $("[data-mark-order]", p);
-    if (mo) mo.onclick = function () {
+    var mt = $("[data-team]", p);
+    if (mt) mt.onclick = openTeamSheet;
+    var td = $("[data-todo]", p);
+    if (td) td.onclick = openTodoSheet;
+    var mo2 = $("[data-mark-order]", p);
+    if (mo2) mo2.onclick = function () {
       if (!confirm("标记「完成首次出单」？")) return;
       api("/api/launch/first-order", { method: "POST", body: JSON.stringify({ done: true }) })
         .then(function () { toast("恭喜！首次出单里程碑达成"); loadAll().then(render); })
@@ -1072,6 +1078,69 @@
         }).then(function () { return api("/api/settings/test", { method: "POST", body: "{}" }); })
           .then(function (r) { closeSheet(); toast("连接成功：" + String(r.reply || "OK").slice(0, 20)); checkAiState(); })
           .catch(function (e) { btn.disabled = false; toast(e.message, true); });
+      };
+    }).catch(function (e) { toast(e.message, true); });
+  }
+
+  /* ══ 团队与邀请 / 今日待办 ══ */
+  function openTeamSheet() {
+    api("/api/team").then(function (t) {
+      var role = t.me_role || "owner";
+      var members = (t.members || []).map(function (m) { return m.name; }).join("、");
+      var html = '<div class="muted">当前团队：<b>' + esc((t.workspaces[0] || {}).name || "") +
+        "</b><br>成员：" + esc(members || "仅你一人") + "（" + (t.members || []).length + " 人）</div>" +
+        (role === "owner"
+          ? '<div class="actions"><button class="btn-gold" id="tm-invite">生成邀请码</button></div><div class="muted" id="tm-out" style="margin-top:10px"></div>'
+          : '<div class="actions"><button class="btn-line" id="tm-leave" style="width:100%">退出团队</button></div>') +
+        '<div class="field" style="margin-top:16px"><label>已注册同事，输入邀请码加入</label>' +
+        '<input id="tm-code" placeholder="6 位邀请码"></div>' +
+        '<div class="actions"><button class="btn-navy" id="tm-join">加入团队（数据共享）</button></div>';
+      openSheet("团队与邀请", "同一账号体系，加入后共享方案、平台进度与待办", html);
+      var inv = $("#tm-invite");
+      if (inv) inv.onclick = function () {
+        api("/api/team/invite", { method: "POST", body: JSON.stringify({ role: "member" }) })
+          .then(function (r) {
+            $("#tm-out").innerHTML = "邀请码 <b style=\"color:var(--warn)\">" + esc(r.code) +
+              "</b><br>让同事在「我的 → 团队与邀请」输入即可，7 天有效。";
+          }).catch(function (e) { toast(e.message, true); });
+      };
+      var lv = $("#tm-leave");
+      if (lv) lv.onclick = function () {
+        api("/api/team/leave", { method: "POST", body: "{}" }).then(function () {
+          closeSheet(); toast("已退出团队"); loadAll().then(render);
+        });
+      };
+      $("#tm-join").onclick = function () {
+        api("/api/team/join", { method: "POST", body: JSON.stringify({ code: $("#tm-code").value.trim() }) })
+          .then(function (r) {
+            closeSheet();
+            toast("已加入 " + (r.joined ? r.joined.owner_name : "团队") + "，数据已共享");
+            loadAll().then(function () { render(); });
+          }).catch(function (e) { toast(e.message, true); });
+      };
+    }).catch(function (e) { toast(e.message, true); });
+  }
+
+  function openTodoSheet() {
+    api("/api/workhub").then(function (d) {
+      var html = '<div class="muted">' + (d.connected
+          ? "已绑定 " + d.bindings.map(function (b) { return b.provider; }).join("、")
+          : "还没有绑定工作账号（飞书 / 企微 / 邮箱），绑定后待办会汇到这里") + "</div>" +
+        '<div class="field" style="margin-top:14px"><label>绑定工作账号</label><input id="wh-acc" placeholder="账号，如 ops@company.com"></div>' +
+        '<div class="actions"><button class="btn-line" id="wh-bind" style="width:100%">绑定</button></div>' +
+        '<div class="sec" style="margin-top:18px"><h3>今日待办（' + d.tasks.length + "）</h3></div>" +
+        d.tasks.map(function (t) {
+          return '<div class="plat" style="margin-bottom:10px;padding:13px"><div class="tiny">' + esc(t.source) +
+            '</div><div style="font-size:13.5px;font-weight:700;margin-top:4px">' + esc(t.title) +
+            '</div><div class="tiny" style="margin-top:4px">' + esc(t.detail || "") + "</div></div>";
+        }).join("");
+      openSheet("今日待办", "由出海计划、平台进度与工作账号实时推导", html);
+      $("#wh-bind").onclick = function () {
+        api("/api/workhub/bind", {
+          method: "POST",
+          body: JSON.stringify({ provider: "邮箱", account: $("#wh-acc").value.trim() }),
+        }).then(function () { closeSheet(); openTodoSheet(); toast("已绑定"); })
+          .catch(function (e) { toast(e.message, true); });
       };
     }).catch(function (e) { toast(e.message, true); });
   }
