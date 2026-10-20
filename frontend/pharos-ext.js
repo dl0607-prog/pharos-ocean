@@ -570,6 +570,17 @@
     if (!UI || !UI.S) return;
     var main = document.getElementById("mainInner");
     if (!main) return;
+    /* 库存 / 合规 / 店铺：把演示按钮直接绑到真实表单 */
+    if (UI.S.view === "inventory" || UI.S.view === "compliance" || UI.S.view === "stores") {
+      var map = { inventory: ["创建补货单", "replenish"], compliance: ["登记证书", "cert"], stores: ["连接店铺", "store"] };
+      var label = map[UI.S.view][0], key = map[UI.S.view][1];
+      Array.prototype.forEach.call(main.querySelectorAll("button, a"), function (b) {
+        if ((b.textContent || "").indexOf(label) >= 0 && !b.__phxBound) {
+          b.__phxBound = true;
+          b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); openOpsForm(key); }, true);
+        }
+      });
+    }
     if (UI.S.view === "team" && !document.getElementById("phx-team-card")) {
       var box = document.createElement("div");
       box.id = "phx-team-card";
@@ -639,7 +650,7 @@
           d.tasks.map(function (t, i) {
             var start = i % 5, span = 2 + (i % 2);
             return '<div style="padding:7px 0;border-top:1px solid var(--hair)">' +
-              '<div class="row" style="gap:8px;align-items:center">' + tag(t.source, "soft") +
+              '<div class="row" style="gap:8px;align-items:center"><span class="tag soft">' + esc(t.source) + "</span>" +
               '<span class="small">' + esc(t.title) + "</span></div>" +
               '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:6px">' +
               [0, 1, 2, 3, 4, 5, 6].map(function (c) {
