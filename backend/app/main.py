@@ -3,7 +3,7 @@ import json
 import re
 from typing import Any, Dict
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (FileResponse, HTMLResponse, RedirectResponse,
                                StreamingResponse)
@@ -749,6 +749,39 @@ def _chunk_text(text: str, size: int = 800) -> list:
     if buf:
         chunks.append(buf)
     return chunks
+
+
+@app.post("/api/kb/upload")
+async def upload_kb(file: UploadFile = File(...), tag: str = "其他",
+                    user: dict = Depends(auth.current_user)):
+    """上传 PDF / Word / TXT / Markdown，服务端提取文字后入库切分。"""
+    name = (file.filename or "未命名").strip()
+    raw = await file.read()
+    if len(raw) > 8 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="文件过大（上限 8MB）")
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    text = ""
+    try:
+        if ext == "pdf":
+            import io
+            from pypdf import PdfReader
+            reader = PdfReader(io.BytesIO(raw))
+            text = "\n\n".join((p.extract_text() or "") for p in reader.pages)
+        elif ext in ("docx", "doc"):
+            import io
+            from docx import Document
+            doc = Document(io.BytesIO(raw))
+            text = "\n\n".join(p.text for p in doc.paragraphs if p.text.strip())
+        else:
+            text = raw.decode("utf-8", "ignore")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="文件解析失败：" + str(e)[:120])
+    text = (text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="没有提取到文字（扫描版 PDF 需先 OCR）")
+    chunks = _chunk_text(text)
+    title = name.rsplit(".", 1)[0][:200]
+    return {"doc": database.add_kb_doc(scope(user), title, tag[:40], text, len(chunks))}
 
 
 @app.get("/api/kb")

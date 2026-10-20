@@ -634,7 +634,8 @@
           '<div class="row wrap" style="gap:8px;margin-bottom:10px">' +
           '<input id="phx-kb-title" placeholder="文档标题" style="padding:8px 12px;border-radius:10px;border:1px solid var(--glass-line);background:transparent;color:inherit;min-width:180px">' +
           '<select id="phx-kb-tag" class="btn" style="padding:8px 12px"><option>品牌资产</option><option>市场知识</option><option>平台规则</option><option>认证文件</option><option>复盘</option></select>' +
-          '<button class="btn primary" id="phx-kb-add">上传/保存</button>' +
+          '<button class="btn primary" id="phx-kb-add">粘贴保存</button>' +
+          '<label class="btn" style="cursor:pointer">📎 上传 PDF/Word<input type="file" id="phx-kb-file" accept=".pdf,.docx,.txt,.md" style="display:none"></label>' +
           '<input id="phx-kb-search" placeholder="搜索知识…" style="padding:8px 12px;border-radius:10px;border:1px solid var(--glass-line);background:transparent;color:inherit">' +
           '<button class="btn" id="phx-kb-go">搜索</button></div>' +
           '<textarea id="phx-kb-text" placeholder="粘贴文档正文（PDF/Word 请先复制文字）" style="width:100%;min-height:90px;padding:10px 12px;border-radius:12px;border:1px solid var(--glass-line);background:transparent;color:inherit;margin-bottom:10px"></textarea>' +
@@ -655,6 +656,24 @@
             }),
           }).then(function () { toast("已存入知识库", "ok"); card.remove(); decorateViews(); })
             .catch(function (e) { toast(e.message, "bad"); });
+        };
+        $("#phx-kb-file", card).onchange = function () {
+          var f = this.files && this.files[0];
+          if (!f) return;
+          var fd = new FormData();
+          fd.append("file", f);
+          toast("正在解析 " + f.name + "…");
+          fetch("/api/kb/upload?tag=" + encodeURIComponent($("#phx-kb-tag", card).value), {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + token() },
+            body: fd,
+          }).then(function (r) { return r.json().then(function (d) {
+            if (!r.ok) throw new Error(d.detail || "上传失败");
+            return d;
+          }); }).then(function () {
+            toast("已上传并切分入库", "ok");
+            card.remove(); decorateViews();
+          }).catch(function (e) { toast(e.message, "bad"); });
         };
         $("#phx-kb-go", card).onclick = function () {
           var q = $("#phx-kb-search", card).value.trim();
