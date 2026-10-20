@@ -119,12 +119,11 @@ def _masked(key: str) -> str:
 
 
 def _settings_view() -> dict:
+    """对外只返回脱敏信息：任何客户端都不能拿到明文 API Key。"""
     return {
         "llm_base_url": config.LLM_BASE_URL,
         "llm_model": config.LLM_MODEL,
         "llm_key_masked": _masked(config.LLM_API_KEY),
-        # 已登录用户可见明文 Key：用于把服务端配置下发到浏览器端应用（一处配置，全员可用）
-        "llm_api_key": config.LLM_API_KEY,
         "llm_temperature": config.LLM_TEMPERATURE,
         "llm_timeout": config.LLM_TIMEOUT,
         "llm_configured": llm.configured(),

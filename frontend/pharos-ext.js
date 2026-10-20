@@ -470,26 +470,17 @@
     return "custom";
   }
 
-  /* 登录后：服务器 ↔ 浏览器 双向补齐 */
+  /* 登录后：把浏览器里的 Key 上报到服务器（供出海启动/平台对接等后端能力使用）。
+     服务器不会把明文 Key 回传给任何客户端——安全要求。 */
   function syncCfgWithServer() {
     api("/api/settings").then(function (s) {
       var cfg = parseCfg();
       var cur = currentProvider(cfg);
-      if (s && s.llm_configured && s.llm_api_key) {
-        if (!cur || !cur.key) {
-          /* 服务器已配置、浏览器没有 → 下发到浏览器（原版应用直接可用） */
-          var pid = cfg.providerId || matchProviderId(s.llm_base_url);
-          cfg.providerId = pid;
-          cfg.enabled = true;
-          cfg.depth = cfg.depth || "standard";
-          cfg.byProvider = cfg.byProvider || {};
-          cfg.byProvider[pid] = { base: s.llm_base_url, key: s.llm_api_key, model: s.llm_model };
-          writeCfgRaw(cfg);
-          toast("已从服务器同步 AI 配置，可直接使用智能体", "ok");
-        }
-      } else if (cur && cur.key) {
-        /* 浏览器已配置、服务器没有 → 上报（让出海启动/平台对接也能用） */
+      if (cur && cur.key) {
         pushCfg(cur);
+      } else if (s && s.llm_configured) {
+        /* 服务器已配置但本浏览器没有 Key：提示到 ⚙ 里填一次（不自动下发 Key） */
+        console.info("[PHAROS] 服务器已配置 AI，本机浏览器未保存 Key；智能体对话需在 ⚙ 中填写。");
       }
     }).catch(function () { /* ignore */ });
   }
