@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>彭梓铬 · AI 产品 / 应用运营 · 作品集</title>
+<style>
+  :root{--ink:#14161a;--muted:#5c6573;--line:#e5e8ee;--bg:#f7f8fa;--card:#fff;--accent:#2456c9;--soft:#eef2fb}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 22px 64px}
+  header{padding:28px 0 18px;border-bottom:1px solid var(--line)}
+  h1{font-size:28px;margin:0 0 6px;letter-spacing:.01em}
+  .tagline{font-size:16px;color:var(--muted);margin:0 0 14px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13.5px;color:var(--muted)}
+  .meta a{color:var(--accent);text-decoration:none}
+  .meta a:hover{text-decoration:underline}
+  .pill{display:inline-block;background:var(--soft);color:#2b4f9e;border-radius:4px;padding:1px 8px;font-size:12px;margin-right:6px}
+  h2{font-size:18px;margin:36px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 18px 14px}
+  .card h3{margin:0 0 4px;font-size:16px}
+  .card .role{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+  .card p{margin:0 0 8px;font-size:13.5px;color:#333a45}
+  .card ul{margin:0 0 10px;padding-left:18px;font-size:13px;color:#444c58}
+  .card li{margin:3px 0}
+  .links{display:flex;flex-wrap:wrap;gap:10px;font-size:13px}
+  .links a{color:var(--accent);text-decoration:none}
+  .links a:hover{text-decoration:underline}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:#fff;border:1px solid var(--line);border-radius:6px;padding:5px 10px;font-size:13px;color:#333a45}
+  dl{display:grid;grid-template-columns:120px 1fr;gap:6px 12px;font-size:13.5px;margin:0}
+  dt{color:var(--muted)}
+  dd{margin:0}
+  footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+  .note{font-size:12.5px;color:var(--muted);margin-top:10px}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media print{body{background:#fff}.wrap{max-width:100%;padding:0}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>彭梓铬</h1>
+  <p class="tagline">把业务需求拆成可执行流程，用 AI 做成能跑、能演示、能交接的东西。</p>
+  <div class="meta">
+    <span><span class="pill">2027 届</span>广东创新科技职业学院 · 金融科技应用（大专）</span>
+    <span>东莞 / 深圳</span>
+    <span>可实习 · 可全职到岗</span>
+    <span>📞 13268806758</span>
+    <span>✉️ dl_0607@qq.com</span>
+    <span>GitHub <a href="https://github.com/dl0607-prog" target="_blank" rel="noopener noreferrer">dl0607-prog</a></span>
+  </div>
+</header>
+
+<h2>做过的四件事</h2>
+<div class="grid">
+  <div class="card">
+    <h3>言海寻灯 / PHAROS · AI 出海工作台</h3>
+    <div class="role">项目发起人 / 负责人 · 2026.08 至今 · FastAPI · JavaScript · SQLite</div>
+    <ul>
+      <li>把「跨境商家资料填写 → 出海方案生成 → 任务跟踪」拆成三步产品流程并落地。</li>
+      <li>配置 8 类角色提示词、接入模型 API，实现带历史记录的流式对话与结构化方案生成。</li>
+      <li>参与 PC 与移动 H5 开发联调；源码公开，可现场演示。</li>
+    </ul>
+    <div class="links">
+      <a href="https://github.com/dl0607-prog/pharos-ocean" target="_blank" rel="noopener noreferrer">源码</a>
+      <a href="./pharos-demo.html" target="_blank" rel="noopener noreferrer">产品 Demo</a>
+      <a href="https://dl0607-prog.github.io/pharos-ocean/" target="_blank" rel="noopener noreferrer">在线版本</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>软著工场 · AI 文档生成工具</h3>
+    <div class="role">项目发起人 / 负责人 · 已部署 · FastAPI · SQLAlchemy · python-docx</div>
+    <ul>
+      <li>围绕「源码导入 → 结构分析 → 分章节生成 → 材料编辑 → Word 导出」组织 AI 工作流。</li>
+      <li>把历史补正案例整理成规则库并注入生成提示词，支持规则校验与材料编辑。</li>
+      <li>部署在自己的腾讯云服务器上，可实际访问演示。</li>
+    </ul>
+    <div class="links">
+      <a href="https://github.com/dl0607-prog/ruanzhu-platform" target="_blank" rel="noopener noreferrer">源码</a>
+      <a href="http://159.75.170.88/" target="_blank" rel="noopener noreferrer">在线演示</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>税海拾珠 · 税务审查与问答</h3>
+    <div class="role">产品负责人 · 2026.09 至今 · Node.js / 规则库 / 多角色</div>
+    <ul>
+      <li>梳理 7 类税务审查策略与 5 种使用角色的判断规则，设计「查什么、怎么判、怎么解释」流程。</li>
+      <li>让 AI 输出可追溯的解释，人做最终决定——规则、责任、权限都设计进系统。</li>
+    </ul>
+    <div class="links">
+      <span class="note">项目为内部演示环境，面试可现场演示</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>星海 StarSea · 多终端协同平台</h3>
+    <div class="role">项目发起人 · 2026.11 · 前端 + 云端能力</div>
+    <ul>
+      <li>面向孤独症谱系儿童的多终端协同产品，从需求定义到前端实现完整推进。</li>
+      <li>使用 AI 辅助开发完成界面、数据与演示流程。</li>
+    </ul>
+    <div class="links">
+      <a href="https://github.com/dl0607-prog/starsea" target="_blank" rel="noopener noreferrer">源码</a>
+    </div>
+  </div>
+</div>
+
+<h2>能做什么</h2>
+<div class="chips">
+  <span class="chip">产品需求拆解 / 流程设计</span>
+  <span class="chip">LLM API 接入 / 提示词与角色配置</span>
+  <span class="chip">流式对话 / 结构化生成</span>
+  <span class="chip">Agent 编排与权限设计</span>
+  <span class="chip">FastAPI / JavaScript / SQLite 原型</span>
+  <span class="chip">AIGC 内容生产（视频 / 图文）</span>
+  <span class="chip">企业 / 政府 / 高校对接</span>
+  <span class="chip">单文件交付 / 云服务器部署</span>
+</div>
+
+<h2>实习 · 竞赛 · 证书</h2>
+<dl>
+  <dt>实习</dt>
+  <dd>广州缠韵非遗工作室 · 研发岗 / 研发助理（2024.10–2025.05）：把复杂非遗技艺转化为大众可参与的课程产品，独立负责课程项目从策划、推广、执行到复盘，覆盖 600+ 人次。</dd>
+  <dt>竞赛</dt>
+  <dd>挑战杯 AI 科技开发类省级奖项（血糖无忧、如释重肺，连续两年）；三创赛 AI 赋能企业出海工作台省级奖项。</dd>
+  <dt>证书</dt>
+  <dd>Datawhale × 科大讯飞 LLM 微调；Datawhale Agent Engineer / 大模型开发工程师 / AI+编程 / AI+数据分析；讯飞星火 × Datawhale 提示词工程师；华为 HarmonyOS 应用开发者基础；计算机一级。</dd>
+  <dt>学业</dt>
+  <dd>国家励志奖学金（2024–2025）；专业综合测评第 1（2024–2025）。</dd>
+</dl>
+
+<footer>
+  <p>本页为求职作品集，项目均来自本人真实实践；演示链接为项目地址，面试可现场操作。更新于 2026-11-06。</p>
+</footer>
+</div>
+</body>
+</html>
